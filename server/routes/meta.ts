@@ -171,11 +171,17 @@ const COL_OBJECTIVE = ["Campaign objective", "Objective", "objective"];
 
 router.post("/import/commit", requireAuth, requirePermission(PERMISSIONS.IMPORTS_CREATE), async (req: AuthedRequest, res) => {
   try {
-    const body = z.object({
-      rows: z.array(z.record(z.any())),
-      fileName: z.string().optional(),
-      autoCreateEntities: z.boolean().optional().default(true),
-    }).parse(req.body);
+    // Note: z.record(z.any()) has a known issue in Zod 3.25 where it throws
+    // "Cannot read properties of undefined (reading '_zod')" during parse.
+    // We validate minimally here — rows are already parsed by the /parse endpoint.
+    if (!req.body || !Array.isArray(req.body.rows)) {
+      return res.status(400).json({ error: "Body must contain a rows array" });
+    }
+    const body = {
+      rows: req.body.rows as Record<string, unknown>[],
+      fileName: typeof req.body.fileName === "string" ? req.body.fileName : undefined,
+      autoCreateEntities: req.body.autoCreateEntities !== false,
+    };
 
     const importRow = await db
       .insert(imports)
