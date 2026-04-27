@@ -1,0 +1,2141 @@
+You are a senior full-stack engineer, product architect, and business analyst.
+
+I need you to build a production-ready Web Application that replicates and improves the logic of an Excel-based Meta Ads + CRM + Sales Funnel + ROAS tracking system.
+
+The application is for a SaaS company called “Mofawtar”.
+
+The app must allow the company to track the full journey:
+
+Meta Ads → Prospect Info → Lead → MQL → SQL → Deal → Cost → Revenue → ROAS
+
+The app must support performance tracking by:
+
+Day
+Week
+Month
+Quarter
+Campaign
+Ad Set
+Ad
+Channel
+Sales Agent
+Lead Stage
+Product / Plan
+
+The goal is to replace a complex Excel workbook with a scalable, interactive, role-based web application.
+
+==================================================
+1. APPLICATION OVERVIEW
+==================================================
+
+Build a CRM + Marketing Attribution + Sales Performance + ROAS Analytics Web App.
+
+The application should allow the business to:
+
+1. Import or manually enter Meta Ads data.
+2. Import or manually enter prospect and lead data.
+3. Track the full funnel from prospect to deal.
+4. Track sales activities and follow-ups.
+5. Attribute revenue back to campaigns, ad sets, and ads.
+6. Calculate true performance metrics such as CPL, CPM, CPC, Cost per MQL, Cost per SQL, CAC, Revenue, ROAS, Conversion Rates, Reply Rates, and SLA performance.
+7. Provide dashboards for Admin, Sales Execution, and Media Buyer users.
+8. Allow configurable fields, stages, statuses, scoring rules, channels, products, campaigns, and KPIs without breaking the system.
+9. Allow shared visibility between sales and media teams so both teams can understand quality, cost, and revenue performance.
+10. Support future API integrations with Meta Ads, WhatsApp, Messenger, Instagram DM, website forms, and external CRMs.
+
+==================================================
+2. USER ROLES AND PERMISSIONS
+==================================================
+
+The system must have 3 permission levels:
+
+--------------------------------------------------
+A. Admin
+--------------------------------------------------
+
+Admin has full access to everything.
+
+Admin can:
+
+- View all dashboards.
+- Create, edit, delete, and archive users.
+- Assign user roles.
+- Manage all system settings.
+- Manage campaigns, ad sets, ads, products, channels, lead stages, funnel stages, CRM fields, scoring rules, SLA rules, and KPI definitions.
+- Import Meta Ads data.
+- Import CRM leads.
+- Edit any lead or prospect.
+- View and export all reports.
+- Manage data mapping.
+- Manage integrations.
+- Configure automation rules.
+- Configure notification rules.
+- Configure custom fields.
+- Configure permissions.
+- View audit logs.
+- Override any record.
+- Delete or archive data.
+- Access financial metrics including cost, revenue, profit, CAC, and ROAS.
+
+--------------------------------------------------
+B. Sales Execution
+--------------------------------------------------
+
+Sales Execution users are responsible for sales operations and lead follow-up.
+
+Sales Execution can:
+
+- View assigned leads and prospects.
+- View shared campaign/ad source information related to their leads.
+- Add, edit, and update lead information.
+- Move leads through stages: New Lead, Contacted, MQL, SQL, Demo Scheduled, Quote Sent, Deal Won, Deal Lost, Nurture.
+- Add activities: call, WhatsApp message, Messenger reply, email, meeting, demo, quote, payment, follow-up, note.
+- Add next follow-up date and task reminders.
+- Mark lead quality.
+- Add deal value, expected revenue, actual revenue, close date, lost reason, and notes.
+- View sales dashboards.
+- View performance by day, week, month, quarter.
+- View their own KPIs.
+- View campaign/ad source info enough to understand where the lead came from.
+- View lead cost and quality indicators when allowed by Admin.
+- Export their own assigned leads if permission is enabled.
+
+Sales Execution cannot:
+
+- Delete global Meta Ads data unless Admin allows it.
+- Edit campaign cost unless Admin allows it.
+- Change system settings.
+- Manage users.
+- Change role permissions.
+- Delete other users’ records unless Admin allows it.
+- Change global funnel settings unless Admin allows it.
+
+--------------------------------------------------
+C. Media Buyer
+--------------------------------------------------
+
+Media Buyer users are responsible for campaign performance.
+
+Media Buyer can:
+
+- View Meta Ads campaign, ad set, and ad performance.
+- Add, edit, and import campaign performance data.
+- View campaign cost, impressions, reach, clicks, CPC, CPM, CTR, messages, replies, leads, MQL, SQL, deals, revenue, CAC, and ROAS.
+- Analyze performance by campaign, ad set, ad, channel, day, week, month, and quarter.
+- View aggregated CRM quality metrics linked to campaigns.
+- See lead quality performance without needing full private customer details, unless Admin allows it.
+- View shared sales outcomes: leads, MQL, SQL, deals, revenue, lost reasons, close rate.
+- Tag campaigns and creatives.
+- Add notes to campaigns/ad sets/ads.
+- View creative testing results.
+- View attribution and funnel performance.
+- Export campaign reports if permission is enabled.
+
+Media Buyer cannot:
+
+- Edit customer personal information unless Admin allows it.
+- Change lead owner unless Admin allows it.
+- Change deal status unless Admin allows it.
+- Manage users.
+- Change system settings.
+- Delete CRM records.
+- Access sensitive personal information if Admin restricts it.
+
+--------------------------------------------------
+D. Shared Visibility Between Sales and Media Buyer
+--------------------------------------------------
+
+Sales and Media Buyer users must both be able to see shared performance information that helps improve business results.
+
+Shared information should include:
+
+- Campaign name
+- Ad set name
+- Ad name
+- Channel
+- Lead source
+- Date
+- Lead count
+- MQL count
+- SQL count
+- Deal count
+- Revenue
+- Lost reasons summary
+- Lead quality score
+- Reply rate
+- Conversion rate
+- Cost per lead
+- Cost per MQL
+- Cost per SQL
+- CAC
+- ROAS
+
+Private customer information should be controlled by permissions.
+
+==================================================
+3. MAIN MODULES
+==================================================
+
+Build the application with these main modules:
+
+1. Authentication and Role-Based Access Control
+2. Admin Settings
+3. Meta Ads Data
+4. Prospects and CRM Leads
+5. Sales Pipeline
+6. Activity Log
+7. Funnel Tracking
+8. Campaign / Ad Set / Ad Performance
+9. Revenue and Deal Tracking
+10. ROAS and Cost Analytics
+11. Dashboards
+12. Reports
+13. Import / Export
+14. Custom Fields Manager
+15. KPI and Formula Engine
+16. SLA and Reminder System
+17. Audit Logs
+18. Future Integrations Layer
+
+==================================================
+4. CORE BUSINESS FLOW
+==================================================
+
+The system must support this business flow:
+
+1. Meta Ads campaign runs on Facebook, Instagram, Messenger, WhatsApp, or website.
+2. The campaign generates conversations, leads, forms, registrations, calls, or website actions.
+3. Prospect information is captured manually, imported, or later through API.
+4. Each prospect is linked to:
+   - Campaign
+   - Ad Set
+   - Ad
+   - Channel
+   - Source
+   - Date
+   - Sales owner
+5. Sales team follows up.
+6. Activities are logged.
+7. Lead is qualified as MQL if it matches marketing qualification rules.
+8. Lead is qualified as SQL if sales confirms real opportunity.
+9. Deal is created if there is commercial opportunity.
+10. Deal is either won, lost, or moved to nurture.
+11. Revenue is recorded.
+12. Revenue is attributed back to the campaign/ad set/ad.
+13. Dashboard calculates true ROAS and sales efficiency.
+
+==================================================
+5. DATA STRUCTURE / DATABASE SCHEMA
+==================================================
+
+Use PostgreSQL as the database.
+
+Use a clean relational schema with support for custom fields.
+
+Use Prisma ORM or Drizzle ORM.
+
+Create the following main tables:
+
+--------------------------------------------------
+users
+--------------------------------------------------
+
+Fields:
+
+id
+name
+email
+password_hash
+role_id
+status
+phone
+team
+created_at
+updated_at
+last_login_at
+
+--------------------------------------------------
+roles
+--------------------------------------------------
+
+Fields:
+
+id
+name
+description
+permissions_json
+created_at
+updated_at
+
+Default roles:
+
+Admin
+Sales Execution
+Media Buyer
+
+--------------------------------------------------
+campaigns
+--------------------------------------------------
+
+Fields:
+
+id
+platform_campaign_id
+campaign_name
+objective
+buying_type
+status
+start_date
+end_date
+budget
+created_at
+updated_at
+
+--------------------------------------------------
+ad_sets
+--------------------------------------------------
+
+Fields:
+
+id
+campaign_id
+platform_adset_id
+adset_name
+audience
+placement
+optimization_goal
+status
+start_date
+end_date
+budget
+created_at
+updated_at
+
+--------------------------------------------------
+ads
+--------------------------------------------------
+
+Fields:
+
+id
+campaign_id
+adset_id
+platform_ad_id
+ad_name
+creative_name
+creative_type
+primary_text
+headline
+cta
+status
+created_at
+updated_at
+
+--------------------------------------------------
+meta_daily_performance
+--------------------------------------------------
+
+This table stores daily Meta Ads metrics at campaign/ad set/ad level.
+
+Fields:
+
+id
+date
+quarter
+month
+week
+campaign_id
+adset_id
+ad_id
+channel
+amount_spent
+impressions
+reach
+frequency
+clicks
+link_clicks
+landing_page_views
+ctr
+cpc
+cpm
+messaging_conversations_started
+messenger_conversations
+whatsapp_conversations
+instagram_dm_conversations
+new_messaging_contacts
+total_messaging_contacts
+messaging_conversations_replied
+messenger_calls_placed
+meta_leads
+website_registrations_completed
+purchases
+raw_json
+created_at
+updated_at
+
+--------------------------------------------------
+prospects
+--------------------------------------------------
+
+This table stores actual contact/customer information.
+
+Fields:
+
+id
+prospect_code
+first_name
+last_name
+full_name
+phone
+email
+company_name
+job_title
+industry
+city
+country
+channel
+source
+utm_source
+utm_medium
+utm_campaign
+utm_content
+utm_term
+campaign_id
+adset_id
+ad_id
+campaign_name_snapshot
+adset_name_snapshot
+ad_name_snapshot
+first_contact_date
+created_date
+assigned_sales_id
+lead_stage_id
+lead_status_id
+lead_quality
+lead_score
+customer_type
+product_interest
+notes
+created_at
+updated_at
+
+--------------------------------------------------
+lead_stages
+--------------------------------------------------
+
+Fields:
+
+id
+stage_name
+stage_order
+stage_type
+is_active
+is_system_default
+created_at
+updated_at
+
+Default stages:
+
+Prospect
+Lead
+Contacted
+MQL
+SQL
+Demo Scheduled
+Quote Sent
+Deal Won
+Deal Lost
+Nurture
+
+--------------------------------------------------
+lead_statuses
+--------------------------------------------------
+
+Fields:
+
+id
+status_name
+description
+is_active
+created_at
+updated_at
+
+Default statuses:
+
+New
+Open
+In Progress
+Qualified
+Unqualified
+Won
+Lost
+Nurture
+Duplicate
+Invalid
+No Response
+
+--------------------------------------------------
+deals
+--------------------------------------------------
+
+Fields:
+
+id
+prospect_id
+deal_name
+deal_stage
+expected_revenue
+actual_revenue
+currency
+probability
+deal_status
+close_date
+won_date
+lost_date
+lost_reason_id
+sales_owner_id
+campaign_id
+adset_id
+ad_id
+created_at
+updated_at
+
+--------------------------------------------------
+lost_reasons
+--------------------------------------------------
+
+Fields:
+
+id
+reason_name
+description
+is_active
+created_at
+updated_at
+
+Examples:
+
+Price too high
+No budget
+Not decision maker
+Not interested
+Wrong target
+Competitor selected
+No response
+Duplicate lead
+Invalid contact
+Product not fit
+
+--------------------------------------------------
+activities
+--------------------------------------------------
+
+This table stores every sales and customer interaction.
+
+Fields:
+
+id
+prospect_id
+user_id
+activity_date
+activity_type
+activity_channel
+activity_outcome
+notes
+next_followup_date
+duration_minutes
+created_at
+updated_at
+
+Default activity types:
+
+Lead Created
+First Reply
+Call
+WhatsApp Message
+Messenger Reply
+Instagram DM
+Email
+Meeting
+Demo
+Quote Sent
+Payment
+Follow-up
+Stage Changed
+Note
+Task Created
+Task Completed
+
+--------------------------------------------------
+tasks
+--------------------------------------------------
+
+Fields:
+
+id
+prospect_id
+assigned_to
+created_by
+task_title
+task_description
+due_date
+priority
+status
+reminder_at
+completed_at
+created_at
+updated_at
+
+Default task statuses:
+
+Pending
+In Progress
+Completed
+Overdue
+Cancelled
+
+--------------------------------------------------
+products
+--------------------------------------------------
+
+Fields:
+
+id
+product_name
+product_category
+price
+billing_cycle
+is_active
+created_at
+updated_at
+
+Examples:
+
+Electronic Receipt Subscription
+Electronic Invoice Subscription
+POS Integration
+Tax File Setup
+Multi-Branch Subscription
+
+--------------------------------------------------
+custom_fields
+--------------------------------------------------
+
+This is critical. The system must allow Admin to create new fields without code changes.
+
+Fields:
+
+id
+entity_type
+field_key
+field_label
+field_type
+options_json
+is_required
+is_filterable
+is_reportable
+is_active
+created_at
+updated_at
+
+entity_type examples:
+
+prospect
+deal
+campaign
+adset
+ad
+activity
+product
+
+field_type examples:
+
+text
+number
+date
+datetime
+dropdown
+multi_select
+checkbox
+boolean
+currency
+percentage
+email
+phone
+url
+textarea
+
+--------------------------------------------------
+custom_field_values
+--------------------------------------------------
+
+Fields:
+
+id
+custom_field_id
+entity_type
+entity_id
+value_text
+value_number
+value_date
+value_json
+created_at
+updated_at
+
+--------------------------------------------------
+kpi_definitions
+--------------------------------------------------
+
+Admin can create or edit KPI definitions.
+
+Fields:
+
+id
+kpi_key
+kpi_name
+description
+formula
+entity_level
+format_type
+is_active
+created_at
+updated_at
+
+entity_level examples:
+
+daily
+weekly
+monthly
+quarterly
+campaign
+adset
+ad
+sales_agent
+channel
+
+--------------------------------------------------
+scoring_rules
+--------------------------------------------------
+
+Fields:
+
+id
+rule_name
+entity_type
+condition_json
+score_value
+is_active
+created_at
+updated_at
+
+Examples:
+
+Phone exists +10
+Email exists +5
+Business owner +15
+Asked about price +20
+Requested demo +30
+No response -10
+Wrong number -50
+
+--------------------------------------------------
+sla_rules
+--------------------------------------------------
+
+Fields:
+
+id
+rule_name
+stage_id
+max_response_minutes
+max_followup_hours
+priority
+is_active
+created_at
+updated_at
+
+Examples:
+
+New lead first response must happen within 15 minutes.
+MQL follow-up must happen within 2 hours.
+SQL follow-up must happen within 1 business day.
+
+--------------------------------------------------
+audit_logs
+--------------------------------------------------
+
+Fields:
+
+id
+user_id
+entity_type
+entity_id
+action
+old_value_json
+new_value_json
+created_at
+
+--------------------------------------------------
+imports
+--------------------------------------------------
+
+Fields:
+
+id
+import_type
+file_name
+status
+uploaded_by
+mapping_json
+summary_json
+created_at
+updated_at
+
+==================================================
+6. CONFIGURABLE FIELDS REQUIREMENT
+==================================================
+
+All fields that are variable must be configurable from the Admin UI.
+
+Admin must be able to add, edit, deactivate, and reorder:
+
+- Lead stages
+- Lead statuses
+- Deal stages
+- Lost reasons
+- Activity types
+- Activity channels
+- Channels
+- Sources
+- Products
+- Campaign tags
+- Creative types
+- KPI definitions
+- Scoring rules
+- SLA rules
+- Custom fields
+- Dropdown values
+- User teams
+- Permissions
+
+The system must not break if a new stage or field is added.
+
+Custom fields must be available in:
+
+- Forms
+- Tables
+- Filters
+- Reports
+- Detail pages
+- Export files
+
+==================================================
+7. EXCEL SHEET TO WEB APP MAPPING
+==================================================
+
+The original Excel workbook contains logic similar to these sheets. Recreate them as modules/pages in the Web App.
+
+--------------------------------------------------
+Sheet: Dashboard
+Web Page: Executive Dashboard
+--------------------------------------------------
+
+Show:
+
+Total Spend
+Total Leads
+Total Prospects
+Total MQL
+Total SQL
+Total Deals Won
+Total Revenue
+Average CPL
+Average Cost per MQL
+Average Cost per SQL
+CAC
+ROAS
+Reply Rate
+Lead to MQL Conversion Rate
+MQL to SQL Conversion Rate
+SQL to Deal Conversion Rate
+Deal Win Rate
+Revenue by Campaign
+Spend by Campaign
+ROAS by Campaign
+Sales Performance
+Channel Performance
+Daily / Weekly / Monthly / Quarterly Trend
+
+Filters:
+
+Date range
+Day / Week / Month / Quarter
+Campaign
+Ad Set
+Ad
+Channel
+Sales Agent
+Lead Stage
+Product
+Role-based visibility
+
+--------------------------------------------------
+Sheet: Meta Raw Data
+Web Page: Meta Ads Data
+--------------------------------------------------
+
+Show and manage:
+
+Date
+Campaign
+Ad Set
+Ad
+Channel
+Spend
+Impressions
+Reach
+Clicks
+CTR
+CPC
+CPM
+Messaging Conversations Started
+Messenger Conversations
+WhatsApp Conversations
+Instagram DM Conversations
+New Messaging Contacts
+Total Messaging Contacts
+Messaging Conversations Replied
+Messenger Calls Placed
+Meta Leads
+Website Registrations
+Purchases
+
+Allow:
+
+Manual entry
+CSV import
+Excel import
+Future API import
+Data validation
+Duplicate detection
+Campaign/ad/adset matching
+
+--------------------------------------------------
+Sheet: Prospects CRM
+Web Page: Prospects & Leads CRM
+--------------------------------------------------
+
+Show and manage:
+
+Prospect ID
+Name
+Phone
+Email
+Company
+Channel
+Source
+Campaign
+Ad Set
+Ad
+Assigned Sales
+Lead Stage
+Lead Status
+Lead Quality
+Lead Score
+Product Interest
+First Contact Date
+Last Activity Date
+Next Follow-Up
+Deal Value
+Actual Revenue
+Lost Reason
+Notes
+
+Allow:
+
+Create lead
+Edit lead
+Assign lead
+Change stage
+Add activity
+Add task
+Add note
+Create deal
+Mark MQL
+Mark SQL
+Mark Deal Won
+Mark Deal Lost
+
+--------------------------------------------------
+Sheet: Activity Log
+Web Page: Activity Timeline
+--------------------------------------------------
+
+Show:
+
+Every event related to a lead.
+
+Events:
+
+Lead Created
+First Reply
+Call
+WhatsApp Message
+Messenger Reply
+Instagram DM
+Email
+Meeting
+Demo
+Quote Sent
+Payment
+Follow-up
+Stage Changed
+Note
+Task Created
+Task Completed
+
+Each prospect detail page must show a timeline of activities.
+
+--------------------------------------------------
+Sheet: Daily Funnel
+Web Page: Daily Performance
+--------------------------------------------------
+
+Group data by day.
+
+Metrics:
+
+Spend
+Conversations
+Replies
+CRM Leads
+MQL
+SQL
+Deals
+Revenue
+CPL
+Cost per Reply
+Cost per MQL
+Cost per SQL
+CAC
+ROAS
+Conversion Rates
+
+--------------------------------------------------
+Sheet: Weekly Tracker
+Web Page: Weekly Performance
+--------------------------------------------------
+
+Group data by ISO week.
+
+Same metrics as daily, grouped weekly.
+
+--------------------------------------------------
+Sheet: Monthly Tracker
+Web Page: Monthly Performance
+--------------------------------------------------
+
+Group data by month.
+
+Same metrics as daily, grouped monthly.
+
+--------------------------------------------------
+Sheet: Quarterly Tracker
+Web Page: Quarterly Performance
+--------------------------------------------------
+
+Group data by quarter.
+
+Same metrics as daily, grouped quarterly.
+
+--------------------------------------------------
+Sheet: Campaign Summary
+Web Page: Campaign Performance
+--------------------------------------------------
+
+Group data by campaign.
+
+Metrics:
+
+Spend
+Impressions
+Reach
+Clicks
+CTR
+CPC
+CPM
+Conversations
+Replies
+Meta Leads
+Website Registrations
+CRM Leads
+MQL
+SQL
+Deals Won
+Revenue
+CPL
+Cost per MQL
+Cost per SQL
+CAC
+ROAS
+
+--------------------------------------------------
+Sheet: Ad Set Summary
+Web Page: Ad Set Performance
+--------------------------------------------------
+
+Group data by campaign and ad set.
+
+Same metrics as Campaign Summary.
+
+--------------------------------------------------
+Sheet: Ad Summary
+Web Page: Ad Performance
+--------------------------------------------------
+
+Group data by campaign, ad set, and ad.
+
+Same metrics as Campaign Summary.
+
+--------------------------------------------------
+Sheet: Import Mapping
+Web Page: Import Mapping Settings
+--------------------------------------------------
+
+Allow Admin to map imported file columns to system fields.
+
+Examples:
+
+Campaign Name → campaign_name
+Ad Set Name → adset_name
+Ad Name → ad_name
+Amount Spent → amount_spent
+Messaging Conversations Started → messaging_conversations_started
+Phone → phone
+Lead Stage → lead_stage
+
+--------------------------------------------------
+Sheet: SLA Definitions
+Web Page: SLA Settings
+--------------------------------------------------
+
+Allow Admin to define:
+
+First response SLA
+Follow-up SLA
+Stage-based SLA
+Overdue rules
+Reminder rules
+
+==================================================
+8. CALCULATION LOGIC
+==================================================
+
+Implement a calculation engine that calculates all metrics dynamically.
+
+Use safe division. If denominator is zero, return 0 or null based on context.
+
+Use these formulas:
+
+--------------------------------------------------
+Basic Meta Metrics
+--------------------------------------------------
+
+CTR = clicks / impressions
+
+CPC = amount_spent / clicks
+
+CPM = amount_spent / impressions * 1000
+
+Cost per Conversation = amount_spent / messaging_conversations_started
+
+Reply Rate = messaging_conversations_replied / messaging_conversations_started
+
+Cost per Reply = amount_spent / messaging_conversations_replied
+
+Meta Lead Rate = meta_leads / messaging_conversations_started
+
+Website Registration Rate = website_registrations_completed / clicks
+
+--------------------------------------------------
+CRM Funnel Metrics
+--------------------------------------------------
+
+CRM Leads = count of prospects
+
+MQL Count = count of prospects where lead_stage = MQL or later
+
+SQL Count = count of prospects where lead_stage = SQL or later
+
+Deals Count = count of deals
+
+Deals Won = count of deals where deal_status = Won
+
+Deals Lost = count of deals where deal_status = Lost
+
+Revenue = sum of actual_revenue for won deals
+
+Expected Revenue = sum of expected_revenue for open deals
+
+Lead to MQL Rate = MQL Count / CRM Leads
+
+MQL to SQL Rate = SQL Count / MQL Count
+
+SQL to Deal Rate = Deals Count / SQL Count
+
+Deal Win Rate = Deals Won / Deals Count
+
+Lead to Deal Rate = Deals Won / CRM Leads
+
+--------------------------------------------------
+Cost Metrics
+--------------------------------------------------
+
+CPL = amount_spent / CRM Leads
+
+Cost per MQL = amount_spent / MQL Count
+
+Cost per SQL = amount_spent / SQL Count
+
+CAC = amount_spent / Deals Won
+
+--------------------------------------------------
+Revenue Metrics
+--------------------------------------------------
+
+ROAS = Revenue / amount_spent
+
+Profit = Revenue - amount_spent
+
+ROI = Profit / amount_spent
+
+Average Deal Size = Revenue / Deals Won
+
+Revenue per Lead = Revenue / CRM Leads
+
+Revenue per MQL = Revenue / MQL Count
+
+Revenue per SQL = Revenue / SQL Count
+
+--------------------------------------------------
+SLA Metrics
+--------------------------------------------------
+
+First Response Time = first_reply_datetime - lead_created_datetime
+
+SLA Met = first_response_time <= configured SLA minutes
+
+SLA Breached = first_response_time > configured SLA minutes
+
+SLA Compliance Rate = SLA Met Count / Total Leads
+
+Overdue Tasks = count of tasks where due_date < now and status not completed
+
+--------------------------------------------------
+Time Grouping Logic
+--------------------------------------------------
+
+Day = date
+
+Week = ISO week number
+
+Month = year-month
+
+Quarter = year-quarter
+
+All dashboards must support grouping by:
+
+Day
+Week
+Month
+Quarter
+
+==================================================
+9. ATTRIBUTION LOGIC
+==================================================
+
+The system must attribute CRM outcomes back to Meta Ads using this priority:
+
+1. platform_ad_id if available
+2. ad_id if available
+3. ad name exact match + ad set name + campaign name
+4. UTM parameters
+5. campaign name exact match
+6. manual mapping
+
+Each prospect should be linked to:
+
+campaign_id
+adset_id
+ad_id
+
+Revenue from deals should roll up to:
+
+Ad level
+Ad Set level
+Campaign level
+Channel level
+Sales Agent level
+Time period
+
+If a prospect is not matched, mark it as:
+
+Unattributed
+
+Admin should be able to manually fix attribution.
+
+==================================================
+10. DASHBOARD REQUIREMENTS
+==================================================
+
+Create dashboards for each role.
+
+--------------------------------------------------
+Admin Dashboard
+--------------------------------------------------
+
+Admin sees everything:
+
+Company overview
+Total spend
+Total revenue
+ROAS
+CAC
+CPL
+MQL
+SQL
+Deals
+Revenue by campaign
+ROAS by campaign
+Sales performance
+Media performance
+Funnel conversion
+Lead quality
+SLA performance
+Lost reasons
+Channel performance
+Product performance
+Daily/weekly/monthly/quarterly trends
+Unattributed leads
+Data quality issues
+
+--------------------------------------------------
+Sales Execution Dashboard
+--------------------------------------------------
+
+Sales sees:
+
+Assigned leads
+New leads today
+Follow-ups due today
+Overdue follow-ups
+MQL count
+SQL count
+Deals won
+Revenue closed
+Pipeline value
+Conversion rates
+Lead source quality
+Campaign quality summary
+Best converting channels
+Lost reasons
+SLA performance
+Personal performance by day/week/month/quarter
+
+Sales should not need to see every media buying detail, but should see enough source and quality data to improve follow-up.
+
+--------------------------------------------------
+Media Buyer Dashboard
+--------------------------------------------------
+
+Media Buyer sees:
+
+Spend
+Impressions
+Reach
+Clicks
+CTR
+CPC
+CPM
+Conversations
+Replies
+Meta Leads
+Website Registrations
+CRM Leads
+MQL
+SQL
+Deals
+Revenue
+ROAS
+Cost per lead
+Cost per MQL
+Cost per SQL
+CAC
+Campaign ranking
+Ad set ranking
+Ad ranking
+Channel performance
+Creative performance
+Lead quality by campaign
+Sales outcome by campaign
+Lost reasons by campaign
+Daily/weekly/monthly/quarterly trends
+
+Media Buyer should see aggregated sales outcome data so they can optimize campaigns based on real business results, not only Meta Ads metrics.
+
+==================================================
+11. TABLES AND FILTERING REQUIREMENTS
+==================================================
+
+All data tables must include:
+
+Search
+Sort
+Filter
+Date range filter
+Column show/hide
+Export CSV
+Pagination
+Saved views if possible
+
+Important filters:
+
+Date
+Campaign
+Ad Set
+Ad
+Channel
+Source
+Sales Agent
+Lead Stage
+Lead Status
+Product
+Deal Status
+Lost Reason
+SLA Status
+Lead Quality
+Revenue range
+Cost range
+ROAS range
+
+==================================================
+12. FORMS REQUIREMENTS
+==================================================
+
+Create forms for:
+
+Lead / Prospect creation
+Lead editing
+Activity creation
+Task creation
+Deal creation
+Campaign creation
+Ad Set creation
+Ad creation
+Manual Meta performance entry
+Custom field creation
+KPI definition creation
+Scoring rule creation
+SLA rule creation
+Import mapping
+
+Forms must support dynamic custom fields.
+
+==================================================
+13. IMPORT / EXPORT REQUIREMENTS
+==================================================
+
+The system must support import from CSV and Excel.
+
+Import types:
+
+1. Meta Ads performance import
+2. CRM leads import
+3. Sales activity import
+4. Deals import
+
+The import process should have:
+
+Step 1: Upload file
+Step 2: Preview data
+Step 3: Map columns
+Step 4: Validate data
+Step 5: Show errors
+Step 6: Confirm import
+Step 7: Save import log
+
+Validation examples:
+
+Required fields missing
+Invalid date
+Invalid number
+Duplicate lead
+Duplicate campaign/ad/adset row
+Unknown campaign
+Unknown sales agent
+Invalid phone
+Invalid email
+
+Export:
+
+All dashboards and tables should be exportable as CSV.
+
+Admin can export everything.
+Sales can export assigned leads if permission enabled.
+Media Buyer can export campaign reports if permission enabled.
+
+==================================================
+14. SAMPLE DATA REQUIREMENT
+==================================================
+
+Seed the database with realistic sample data covering one full quarter.
+
+Create sample data for Q2 2026:
+
+Date range:
+
+2026-04-01 to 2026-06-30
+
+Average:
+
+Around 30 prospects per day
+
+Include:
+
+Multiple campaigns
+Multiple ad sets
+Multiple ads
+Multiple channels
+Multiple sales agents
+Multiple lead stages
+Multiple products
+Multiple deals
+Won deals
+Lost deals
+Nurture leads
+No-response leads
+Invalid leads
+Unattributed leads
+
+Example campaigns:
+
+Mofawtar - WhatsApp Leads - Q2
+Mofawtar - Messenger Leads - Q2
+Mofawtar - E-Receipt Offer - Q2
+Mofawtar - Retargeting - Q2
+Mofawtar - Website Registration - Q2
+
+Example channels:
+
+WhatsApp
+Messenger
+Instagram DM
+Facebook Lead Form
+Website Form
+Phone Call
+
+Example products:
+
+Electronic Receipt Subscription
+Electronic Invoice Subscription
+POS Integration
+Multi-Branch Subscription
+Tax File Setup
+
+Generate enough sample data so dashboards are meaningful.
+
+==================================================
+15. TECH STACK
+==================================================
+
+Build the app using:
+
+Frontend:
+React
+TypeScript
+Tailwind CSS
+shadcn/ui
+Recharts for charts
+TanStack Table for data tables
+React Hook Form + Zod for forms and validation
+
+Backend:
+Node.js
+Express or Next.js API routes
+PostgreSQL
+Prisma ORM or Drizzle ORM
+
+Authentication:
+Email/password authentication
+Role-based access control
+
+Deployment:
+Must run on Replit
+
+Use environment variables for:
+
+DATABASE_URL
+SESSION_SECRET
+JWT_SECRET if needed
+
+==================================================
+16. UI / UX REQUIREMENTS
+==================================================
+
+The UI should be clean, modern, and business-focused.
+
+Use:
+
+Sidebar navigation
+Top filters
+Dashboard cards
+Charts
+Tables
+Detail pages
+Forms
+Modals
+Tabs
+Badges
+Status colors
+Empty states
+Loading states
+Error states
+
+Recommended navigation:
+
+Dashboard
+Meta Ads
+Campaigns
+Ad Sets
+Ads
+Prospects CRM
+Sales Pipeline
+Activities
+Tasks
+Deals
+Reports
+Import Data
+Settings
+Users
+Audit Logs
+
+Role-based navigation:
+
+Admin sees all.
+Sales sees Dashboard, Prospects CRM, Pipeline, Activities, Tasks, Deals, Reports.
+Media Buyer sees Dashboard, Meta Ads, Campaigns, Ad Sets, Ads, Reports.
+
+==================================================
+17. FUNCTIONAL REQUIREMENTS
+==================================================
+
+The app must allow:
+
+- Login/logout.
+- Role-based access.
+- Admin user management.
+- Add/edit/delete/archive campaigns.
+- Add/edit/delete/archive ad sets.
+- Add/edit/delete/archive ads.
+- Enter daily Meta Ads metrics.
+- Import Meta Ads metrics.
+- Add/edit prospects.
+- Add/edit activities.
+- Add/edit tasks.
+- Add/edit deals.
+- Change lead stages.
+- Track MQL, SQL, won, lost.
+- Assign leads to sales users.
+- Track revenue.
+- Attribute revenue to campaigns/adsets/ads.
+- Calculate all KPIs.
+- Show dashboards by role.
+- Filter all reports by day/week/month/quarter.
+- Manage custom fields.
+- Manage configurable dropdowns.
+- Manage KPI definitions.
+- Manage scoring rules.
+- Manage SLA rules.
+- Export reports.
+- View audit logs.
+
+==================================================
+18. NON-FUNCTIONAL REQUIREMENTS
+==================================================
+
+The app must be:
+
+Scalable
+Maintainable
+Role-secured
+Easy to extend
+Data-driven
+Configurable
+Fast enough for thousands of leads
+Clear for non-technical users
+Safe against broken calculations
+Easy to import/export from Excel
+Ready for future integrations
+
+Use clear code structure.
+
+Separate:
+
+Components
+Pages
+API routes
+Database schema
+Services
+Calculation logic
+Permission logic
+Import logic
+Seed data
+
+==================================================
+19. REPORTING REQUIREMENTS
+==================================================
+
+Create these reports:
+
+1. Executive Summary
+2. Daily Funnel Report
+3. Weekly Funnel Report
+4. Monthly Funnel Report
+5. Quarterly Funnel Report
+6. Campaign Performance Report
+7. Ad Set Performance Report
+8. Ad Performance Report
+9. Channel Performance Report
+10. Sales Agent Performance Report
+11. Lead Source Quality Report
+12. Revenue Attribution Report
+13. Lost Reasons Report
+14. SLA Compliance Report
+15. Unattributed Leads Report
+16. Data Quality Report
+
+==================================================
+20. BUSINESS REQUIREMENTS DOCUMENT SUMMARY
+==================================================
+
+Business Problem:
+
+The company runs Meta Ads campaigns that generate messages, leads, calls, and website registrations. The marketing team can see Meta metrics, but cannot easily understand which campaigns generate real qualified leads, sales opportunities, revenue, and ROAS. The sales team talks to prospects daily but outcomes are not fully connected to campaign cost and source.
+
+Business Objective:
+
+Build a web application that connects media buying data with real CRM and sales outcomes to measure true marketing and sales performance.
+
+Success Criteria:
+
+- Every lead is linked to a source.
+- Every campaign can be evaluated by cost, lead quality, sales outcome, revenue, and ROAS.
+- Sales can manage daily execution.
+- Media buyers can optimize campaigns based on real outcomes.
+- Admin can configure the system without developer intervention.
+- The app can replace the Excel tracker.
+
+Key KPIs:
+
+Spend
+Leads
+MQL
+SQL
+Deals Won
+Revenue
+CPL
+Cost per MQL
+Cost per SQL
+CAC
+ROAS
+Reply Rate
+Conversion Rate
+SLA Compliance
+
+==================================================
+21. FUNCTIONAL LOGIC
+==================================================
+
+When a new prospect is created:
+
+- Assign unique prospect code.
+- Capture source/channel.
+- Try to match campaign/adset/ad.
+- Set initial stage as Lead.
+- Create activity: Lead Created.
+- Assign to sales user if provided.
+- Calculate lead score based on scoring rules.
+- Create first follow-up task if automation rule exists.
+
+When a sales user updates a lead stage:
+
+- Save old stage and new stage.
+- Create activity: Stage Changed.
+- Update timestamps:
+  - mql_date if moved to MQL
+  - sql_date if moved to SQL
+  - won_date if moved to Deal Won
+  - lost_date if moved to Deal Lost
+- Recalculate funnel metrics.
+
+When a deal is won:
+
+- Mark deal_status = Won.
+- Set actual revenue.
+- Set won date.
+- Attribute revenue to prospect’s campaign/adset/ad.
+- Update revenue reports.
+- Update ROAS.
+
+When a campaign performance row is added:
+
+- Validate date/campaign/adset/ad.
+- Store spend and Meta metrics.
+- Recalculate aggregated performance.
+- Update dashboards.
+
+When imported data has unmatched campaign/ad/adset:
+
+- Create warning.
+- Allow Admin to map manually.
+- Do not delete data.
+- Mark as unmatched until fixed.
+
+==================================================
+22. PERMISSION LOGIC
+==================================================
+
+Create a permission system using permission keys.
+
+Example permission keys:
+
+users.view
+users.create
+users.edit
+users.delete
+
+settings.view
+settings.edit
+
+campaigns.view
+campaigns.create
+campaigns.edit
+campaigns.delete
+campaigns.cost.view
+
+leads.view_all
+leads.view_assigned
+leads.create
+leads.edit
+leads.delete
+leads.assign
+leads.personal_data.view
+
+deals.view
+deals.create
+deals.edit
+deals.revenue.view
+
+reports.admin.view
+reports.sales.view
+reports.media.view
+
+imports.create
+exports.create
+
+custom_fields.manage
+kpi.manage
+sla.manage
+
+Admin gets all permissions.
+
+Sales Execution gets sales-related permissions.
+
+Media Buyer gets campaign and aggregated outcome permissions.
+
+==================================================
+23. API ENDPOINTS
+==================================================
+
+Create REST API endpoints or server actions for:
+
+Auth:
+POST /api/auth/login
+POST /api/auth/logout
+GET /api/auth/me
+
+Users:
+GET /api/users
+POST /api/users
+PATCH /api/users/:id
+DELETE /api/users/:id
+
+Campaigns:
+GET /api/campaigns
+POST /api/campaigns
+GET /api/campaigns/:id
+PATCH /api/campaigns/:id
+DELETE /api/campaigns/:id
+
+Ad Sets:
+GET /api/adsets
+POST /api/adsets
+PATCH /api/adsets/:id
+DELETE /api/adsets/:id
+
+Ads:
+GET /api/ads
+POST /api/ads
+PATCH /api/ads/:id
+DELETE /api/ads/:id
+
+Meta Performance:
+GET /api/meta-performance
+POST /api/meta-performance
+POST /api/meta-performance/import
+
+Prospects:
+GET /api/prospects
+POST /api/prospects
+GET /api/prospects/:id
+PATCH /api/prospects/:id
+DELETE /api/prospects/:id
+
+Activities:
+GET /api/activities
+POST /api/activities
+
+Tasks:
+GET /api/tasks
+POST /api/tasks
+PATCH /api/tasks/:id
+
+Deals:
+GET /api/deals
+POST /api/deals
+PATCH /api/deals/:id
+
+Reports:
+GET /api/reports/dashboard
+GET /api/reports/daily
+GET /api/reports/weekly
+GET /api/reports/monthly
+GET /api/reports/quarterly
+GET /api/reports/campaigns
+GET /api/reports/adsets
+GET /api/reports/ads
+GET /api/reports/sales
+GET /api/reports/channels
+GET /api/reports/roas
+
+Settings:
+GET /api/settings/lead-stages
+POST /api/settings/lead-stages
+PATCH /api/settings/lead-stages/:id
+
+GET /api/settings/custom-fields
+POST /api/settings/custom-fields
+PATCH /api/settings/custom-fields/:id
+
+GET /api/settings/kpis
+POST /api/settings/kpis
+PATCH /api/settings/kpis/:id
+
+Imports:
+POST /api/imports/upload
+POST /api/imports/preview
+POST /api/imports/confirm
+
+Exports:
+GET /api/exports/report
+
+==================================================
+24. CHARTS REQUIRED
+==================================================
+
+Use Recharts to create:
+
+Line chart:
+Spend vs Revenue over time
+
+Bar chart:
+Leads / MQL / SQL / Deals by period
+
+Bar chart:
+ROAS by campaign
+
+Funnel chart or staged cards:
+Lead → MQL → SQL → Deal Won
+
+Pie or donut chart:
+Leads by channel
+
+Bar chart:
+Lost reasons
+
+Table:
+Top campaigns by ROAS
+
+Table:
+Worst campaigns by CAC
+
+Table:
+Sales agent performance
+
+Table:
+Ad performance
+
+==================================================
+25. DATA QUALITY WARNINGS
+==================================================
+
+Create a Data Quality panel showing:
+
+Unattributed leads
+Leads without phone
+Leads without campaign
+Leads without sales owner
+Duplicate phone numbers
+Duplicate emails
+Deals without revenue
+Won deals without close date
+Meta rows without campaign
+Campaigns with spend but no CRM leads
+CRM leads with revenue but no source
+Overdue follow-ups
+SLA breaches
+
+==================================================
+26. FUTURE INTEGRATION READINESS
+==================================================
+
+Do not build real integrations now unless simple, but prepare the structure for:
+
+Meta Ads API
+WhatsApp Business API
+Messenger API
+Instagram DM
+Website form webhook
+Payment system
+External CRM
+Google Sheets import
+
+Create an integrations settings page with placeholder cards:
+
+Meta Ads
+WhatsApp
+Messenger
+Instagram
+Website Forms
+Payment Gateway
+Google Sheets
+
+Each integration card should have:
+
+Status
+API key field placeholder
+Connect button
+Last sync date
+Sync logs placeholder
+
+==================================================
+27. ACCEPTANCE CRITERIA
+==================================================
+
+The app is complete when:
+
+1. It runs successfully on Replit.
+2. It has authentication.
+3. It supports the 3 roles.
+4. Admin can access all pages.
+5. Sales user sees sales-related pages.
+6. Media Buyer sees campaign and performance pages.
+7. The database has realistic Q2 sample data.
+8. Dashboard shows correct calculations.
+9. Reports can be filtered by day/week/month/quarter.
+10. Campaign, Ad Set, and Ad reports show spend, leads, revenue, CAC, and ROAS.
+11. CRM leads are linked to campaign/adset/ad.
+12. Custom fields can be created and used.
+13. Lead stages and statuses are configurable.
+14. KPI formulas are centralized.
+15. Import screens exist.
+16. Export buttons exist.
+17. Data quality warnings exist.
+18. The UI is clean and usable.
+
+==================================================
+28. IMPORTANT IMPLEMENTATION NOTES
+==================================================
+
+Start by building the core app first:
+
+1. Database schema
+2. Seed data
+3. Authentication
+4. Role-based navigation
+5. Dashboard
+6. CRM Leads
+7. Meta Ads Data
+8. Campaign reports
+9. Sales pipeline
+10. Settings
+
+Avoid overengineering in the first version.
+
+Make the app usable with sample data first.
+
+Use clean reusable components.
+
+Use centralized calculation functions.
+
+Use centralized permission checks.
+
+Use safe number formatting.
+
+Use EGP as default currency.
+
+Use Arabic-friendly structure, but interface can start in English. Keep labels clear and business-friendly.
+
+The app should be easy to later localize fully into Arabic.
+
+==================================================
+29. DEFAULT SAMPLE USERS
+==================================================
+
+Create these sample users:
+
+Admin:
+email: admin@mofawtar.com
+password: Admin123456
+
+Sales:
+email: sales@mofawtar.com
+password: Sales123456
+
+Media Buyer:
+email: media@mofawtar.com
+password: Media123456
+
+==================================================
+30. FINAL OUTPUT EXPECTATION
+==================================================
+
+Generate the full application code.
+
+Include:
+
+- Database schema
+- Seed script
+- Frontend pages
+- Backend APIs
+- Role-based permissions
+- Dashboard calculations
+- Sample data
+- Import placeholders
+- Export functionality
+- Settings pages
+- Documentation in README
+
+The final app should be functional, not just a mockup.
+
+Prioritize correctness of business logic, clean UI, and extensibility.
