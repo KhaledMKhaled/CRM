@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api";
@@ -10,15 +10,21 @@ import { Textarea } from "@/components/ui/textarea";
 import { NativeSelect } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArrowLeft, Phone, Mail, Building2, MapPin, Tag, Calendar, MessageSquare } from "lucide-react";
+import { ArrowLeft, Phone, Mail, Building2, MapPin, Tag, Calendar, MessageSquare, Save } from "lucide-react";
 import { formatDate } from "@/lib/utils";
 import { formatCurrency } from "@shared/calculations";
+import { useToast } from "@/components/ui/toast";
+import { useHasPermission } from "@/hooks/useHasPermission";
+import { PERMISSIONS } from "@shared/permissions";
 
 export default function LeadDetailPage() {
   const { id } = useParams();
   const qc = useQueryClient();
+  const toast = useToast();
+  const canEdit = useHasPermission(PERMISSIONS.LEADS_EDIT);
   const lead = useQuery({ queryKey: ["lead", id], queryFn: () => api.get<any>(`/api/prospects/${id}`) });
   const stages = useQuery({ queryKey: ["lead-stages"], queryFn: () => api.get<any[]>(`/api/settings/lead-stages`) });
+  const cfQ = useQuery({ queryKey: ["lead-cf", id], queryFn: () => api.get<any[]>(`/api/prospects/${id}/custom-fields`) });
 
   const updateMut = useMutation({
     mutationFn: (data: any) => api.patch(`/api/prospects/${id}`, data),
@@ -126,6 +132,9 @@ export default function LeadDetailPage() {
             <TabsList>
               <TabsTrigger value="activities">Activities ({p.activities?.length ?? 0})</TabsTrigger>
               <TabsTrigger value="deals">Deals ({p.deals?.length ?? 0})</TabsTrigger>
+              <TabsTrigger value="custom-fields">
+                Custom Fields {(cfQ.data?.length ?? 0) > 0 ? `(${cfQ.data!.length})` : ""}
+              </TabsTrigger>
               <TabsTrigger value="log">Log activity</TabsTrigger>
             </TabsList>
 
@@ -175,6 +184,23 @@ export default function LeadDetailPage() {
                 </CardContent>
               </Card>
             </TabsContent>
+
+            <TabsContent value="custom-fields">
+              <Card>
+                <CardContent className="p-4">
+                  <CustomFieldsPanel
+                    fields={cfQ.data ?? []}
+                    prospectId={parseInt(id!)}
+                    canEdit={canEdit}
+                    onSaved={() => {
+                      qc.invalidateQueries({ queryKey: ["lead-cf", id] });
+                      toast("Custom fields saved", "success");
+                    }}
+                    onError={(msg) => toast(msg, "error")}
+                  />
+                </CardContent>
+              </Card>
+            </TabsContent>
           </Tabs>
         </div>
       </div>
@@ -207,5 +233,169 @@ function LogActivityForm({ onSubmit, submitting }: any) {
       <Textarea placeholder="Notes…" value={d.notes} onChange={(e) => setD({ ...d, notes: e.target.value })} />
       <Button type="submit" disabled={submitting}>{submitting ? "Saving…" : "Log activity"}</Button>
     </form>
+  );
+}
+
+// ── Dynamic Custom Fields panel ───────────────────────────────────────────────
+function getInitialValue(f: any): string {
+  const v = f.value;
+  if (!v) return "";
+  switch (f.fieldType) {
+    case "number": return v.valueNumber ?? "";
+    case "date": return v.valueDate ? v.valueDate.slice(0, 10) : "";
+    case "checkbox": return v.valueJson === true || v.valueText === "true" ? "true" : "false";
+    case "select":
+    case "multiselect": return v.valueText ?? "";
+    default: return v.valueText ?? "";
+  }
+}
+
+function CustomFieldsPanel({ fields, prospectId, canEdit, onSaved, onError }: {
+  fields: any[];
+  prospectId: number;
+  canEdit: boolean;
+  onSaved: () => void;
+  onError: (msg: string) => void;
+}) {
+  const [values, setValues] = useState<Record<number, string>>({});
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    const init: Record<number, string> = {};
+    fields.forEach((f) => { init[f.id] = getInitialValue(f); });
+    setValues(init);
+  }, [fields]);
+
+  if (fields.length === 0) {
+    return (
+      <div className="text-center py-10 text-sm text-[var(--color-muted-fg)]">
+        No custom fields defined for prospects. Go to{" "}
+        <a href="/settings" className="text-[var(--color-primary)] hover:underline">Settings → Custom Fields</a>{" "}
+        to add some.
+      </div>
+    );
+  }
+
+  async function handleSave() {
+    setSaving(true);
+    try {
+      const payload = fields.map((f) => {
+        const raw = values[f.id] ?? "";
+        const isNum = f.fieldType === "number";
+        const isDate = f.fieldType === "date";
+        const isCheck = f.fieldType === "checkbox";
+        return {
+          fieldId: f.id,
+          valueText: isNum || isDate || isCheck ? null : raw || null,
+          valueNumber: isNum ? (raw || null) : null,
+          valueDate: isDate ? (raw || null) : null,
+          valueJson: isCheck ? (raw === "true") : null,
+        };
+      });
+      await api.put(`/api/prospects/${prospectId}/custom-fields`, { values: payload });
+      onSaved();
+    } catch (e: any) {
+      onError(e.message || "Failed to save custom fields");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  function renderInput(f: any) {
+    const val = values[f.id] ?? "";
+    const change = (v: string) => setValues((prev) => ({ ...prev, [f.id]: v }));
+    const disabled = !canEdit;
+
+    switch (f.fieldType) {
+      case "textarea":
+        return <Textarea value={val} onChange={(e) => change(e.target.value)} disabled={disabled} rows={3} />;
+      case "number":
+        return <Input type="number" value={val} onChange={(e) => change(e.target.value)} disabled={disabled} />;
+      case "date":
+        return <Input type="date" value={val} onChange={(e) => change(e.target.value)} disabled={disabled} />;
+      case "checkbox":
+        return (
+          <label className="flex items-center gap-2 cursor-pointer mt-1">
+            <input
+              type="checkbox"
+              checked={val === "true"}
+              onChange={(e) => change(e.target.checked ? "true" : "false")}
+              disabled={disabled}
+              className="h-4 w-4"
+            />
+            <span className="text-sm">{val === "true" ? "Yes" : "No"}</span>
+          </label>
+        );
+      case "url":
+        return (
+          <div className="flex gap-2">
+            <Input type="url" value={val} onChange={(e) => change(e.target.value)} disabled={disabled} placeholder="https://…" className="flex-1" />
+            {val && <a href={val} target="_blank" rel="noreferrer" className="text-[var(--color-primary)] text-sm self-center hover:underline">Open ↗</a>}
+          </div>
+        );
+      case "select": {
+        const opts: string[] = f.optionsJson ?? [];
+        return (
+          <NativeSelect value={val} onChange={(e) => change(e.target.value)} disabled={disabled}>
+            <option value="">— Select —</option>
+            {opts.map((o: string) => <option key={o} value={o}>{o}</option>)}
+          </NativeSelect>
+        );
+      }
+      case "multiselect": {
+        const opts: string[] = f.optionsJson ?? [];
+        const selected = val ? val.split(",").map((s) => s.trim()).filter(Boolean) : [];
+        function toggleOpt(o: string) {
+          const s = new Set(selected);
+          s.has(o) ? s.delete(o) : s.add(o);
+          change([...s].join(", "));
+        }
+        return (
+          <div className="flex flex-wrap gap-2 mt-1">
+            {opts.map((o: string) => (
+              <button
+                key={o}
+                type="button"
+                onClick={() => !disabled && toggleOpt(o)}
+                className={`px-2 py-1 rounded text-xs border transition-colors ${
+                  selected.includes(o)
+                    ? "bg-[var(--color-primary)] text-white border-[var(--color-primary)]"
+                    : "border-[var(--color-border)] hover:border-[var(--color-primary)]"
+                } ${disabled ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}`}
+              >
+                {o}
+              </button>
+            ))}
+          </div>
+        );
+      }
+      default:
+        return <Input value={val} onChange={(e) => change(e.target.value)} disabled={disabled} />;
+    }
+  }
+
+  return (
+    <div className="space-y-4">
+      <div className="grid gap-4 md:grid-cols-2">
+        {fields.map((f) => (
+          <div key={f.id}>
+            <Label className="flex items-center gap-1 text-sm font-medium">
+              {f.fieldLabel}
+              {f.isRequired && <span className="text-[var(--color-danger)] text-xs ml-1">*</span>}
+              <Badge variant="outline" className="ml-auto text-[10px] font-mono">{f.fieldType}</Badge>
+            </Label>
+            <div className="mt-1">{renderInput(f)}</div>
+          </div>
+        ))}
+      </div>
+      {canEdit && (
+        <div className="flex justify-end pt-3 border-t border-[var(--color-border)]">
+          <Button onClick={handleSave} disabled={saving} className="gap-2">
+            <Save className="h-4 w-4" />
+            {saving ? "Saving…" : "Save custom fields"}
+          </Button>
+        </div>
+      )}
+    </div>
   );
 }

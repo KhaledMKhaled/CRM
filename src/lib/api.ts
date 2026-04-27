@@ -28,4 +28,5 @@ export const api = {
   patch: <T>(u: string, b?: any) => request<T>("PATCH", u, b),
   put: <T>(u: string, b?: any) => request<T>("PUT", u, b),
   del: <T>(u: string) => request<T>("DELETE", u),
+  delete: <T>(u: string) => request<T>("DELETE", u),
 };

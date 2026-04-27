@@ -1,6 +1,6 @@
 # Mofawtar CRM — Plan vs. Current State Gap Analysis
 
-> Review date: 2026-04-27 | Repo: `d:\MyCRM\CRM`
+> Review date: 2026-04-27 (updated) | Repo: `d:\MyCRM\CRM`
 
 ---
 
@@ -168,138 +168,77 @@
 
 ---
 
-## ❌ Gaps / Missing / Incomplete
+## ❌ Remaining Gaps (Post-Session 2 Review)
 
-### Step 2 — UI Stack gaps
-| Gap | Plan requirement | Impact |
-|-----|-----------------|--------|
-| **Missing shadcn components**: `toast`, `checkbox`, `radio-group`, `dropdown-menu`, `avatar`, `switch`, `progress`, `scroll-area`, `popover`, `tooltip`, `slider` are in `package.json` but no corresponding component files in `src/components/ui/` | Used throughout the plan (toast notifications, toggle-switches in settings, avatars in leaderboard, dropdowns in filters) | Medium — some UI may silently fail |
-| **No `<DataTable>` component** in `src/components/` | Plan §9 specifies a reusable TanStack Table wrapper with search, sort, multi-filter, date-range, column show/hide, pagination, CSV export, saved views | High — each page reimplements it |
-| **No `useHasPermission()` standalone hook** | Plan §5 — conditional UI hiding (cost/revenue/personal-data fields per role) | Medium |
-
-### Step 4 — Seed gaps
+### Step 4 — Seed gaps (Low priority)
 | Gap | Plan requirement |
 |-----|----------------|
-| **Intentional "unattributed" prospects not guaranteed** — seed assigns `isMeta = channel.startsWith("Meta") || rand() < 0.6`, so most prospects get a campaign. Plan calls for a deliberate set with `isAttributed: false` and no campaign | Data Quality panel may show 0 unattributed |
-| **No duplicate phones/emails explicitly seeded** | Plan §4 says "small set of intentional data-quality issues (duplicate phones, deals without revenue, unattributed)" |
-| **No deals without revenue** | `actualRevenue` is always `> 0` for won deals; plan wants some won deals without actual revenue |
-| **No "won deals without close date"** | All won deals have `wonDate` set |
-| **No "campaigns with spend but no CRM leads"** | Coverage is complete in seed |
-| **Seed is NOT idempotent by re-running** | `TRUNCATE` destroys existing data — plan says "idempotent". Currently it re-seeds cleanly but a true idempotent seed would use upserts + skip-if-exists rather than truncate |
+| **Intentional "unattributed" prospects not guaranteed** | Plan §4: deliberate set with `isAttributed: false` |
+| **No duplicate phones/emails explicitly seeded** | Plan §4 data-quality issues |
+| **No deals without revenue** | Some won deals should have `actualRevenue = 0` |
 
-### Step 8 — API gaps
+### Step 8 — API gaps (Low/Medium)
 | Gap | Plan requirement |
 |-----|----------------|
-| **No `/api/analytics/meta-timeseries` endpoint** | Plan §8: Daily/Weekly/Monthly/Quarterly Performance pages grouping spend, conversations, replies, CRM leads, MQL, SQL, ROAS by time bucket | High |
-| **No time-bucketed endpoints** | `GET /api/analytics/trend` returns raw daily points, but no weekly/monthly/quarterly grouping API | High |
-| **No export endpoint** | Plan §8: `GET /api/reports/export` (CSV) for reports — frontend only does client-side `downloadCsv()` on already-fetched data | Medium |
-| **Missing `adsets` route** standalone | `/api/campaigns` returns campaigns; nested adsets addressable via campaign detail, but no `GET /api/adsets` for the flat adsets list page | Medium |
-| **Audit log missing `oldValueJson`** in `/api/settings/audit` response | Plan says "old/new value diffs" in audit viewer — `oldValueJson` column exists in schema but not populated in most mutations | Medium |
-| **No lost reasons analytics endpoint** | Plan §10: "lost reasons bar" chart on dashboard — no `/api/analytics/lost-reasons` | Medium |
+| **No export endpoint** | `GET /api/reports/export` (CSV server-side) — currently client-side only |
+| **Audit log `oldValueJson`** not populated in most mutations | Plan: old/new value diffs in audit viewer |
 
-### Step 9 — Routing gaps
+### Step 14 — Polish gaps (Low)
 | Gap | Plan requirement |
 |-----|----------------|
-| **`/adsets` → `CampaignsPage`** (line 64 of App.tsx) | Plan specifies a dedicated Ad Sets list page, not reusing CampaignsPage | Medium |
-| **`/ads` → `CampaignsPage`** (line 66) | Same — dedicated Ads list page missing | Medium |
-| **No `/reports/*` sub-routes** | Plan §9 enumerates `/reports/executive`, `/reports/daily`, `/reports/weekly`, `/reports/monthly`, `/reports/quarterly`, `/reports/campaigns`, `/reports/adsets`, `/reports/ads`, `/reports/channels`, `/reports/sales`, `/reports/roas`, `/reports/lead-source`, `/reports/revenue-attribution`, `/reports/lost-reasons`, `/reports/sla`, `/reports/unattributed`, `/reports/data-quality` — all collapsed into one `ReportsPage` with tabs | High |
-| **No `/pipeline` for Media Buyer** | Sidebar nav hides pipeline from Media Buyer role — check if required or not per spec |
-| **No `/settings/*` sub-routes** | Plan §13 lists sub-pages: `/settings/stages`, `/settings/users`, `/settings/roles`, `/settings/custom-fields`, `/settings/kpis`, `/settings/sla`, `/settings/scoring`, `/settings/import-mapping` — all in one `SettingsPage` | Medium |
-
-### Step 10 — Dashboard & Reports gaps
-| Gap | Plan requirement |
-|-----|----------------|
-| **No ROAS-by-campaign bar chart** on Admin Dashboard | Plan §10: "bar: ROAS by campaign" — only spend bar exists | Medium |
-| **No channel donut chart** | Plan §10: "donut: leads by channel" — no PieChart/RadialChart built | Medium |
-| **No lost-reasons bar chart** on dashboard | Plan §10 | Medium |
-| **No "worst-by-CAC table"** on dashboard | Plan §10 | Low |
-| **No dedicated Daily/Weekly/Monthly/Quarterly report pages** | Plan §8, §19 — only a trend chart exists; no tabular grouping by week/month/quarter with full metric set | High |
-| **No Ad Set / Ad Performance pages with rollup metrics** | Plan §12 — `AdsetDetailPage` and `AdDetailPage` are 2–2.5 KB stubs | High |
-| **No Lead Source Quality report** | Plan §19 | Medium |
-| **No Revenue Attribution report** | Plan §19 | Medium |
-| **No SLA Compliance report** | Plan §19 | Medium |
-| **ReportsPage tabs are partial** (missing MQL/SQL metrics in the Campaign tab; missing CPL, cost per MQL/SQL, CAC columns) | Plan §8 full metric set | Medium |
-
-### Step 11 — CRM gaps
-| Gap | Plan requirement |
-|-----|----------------|
-| **Stage change → auto-create activity** not verified on client | Plan §6: stage changes auto-create "Stage Changed" activity — server-side in `prospects.ts` route but not confirmed | Medium |
-| **No Kanban drag-and-drop** in PipelinePage | Plan §11: "drag prospects between stages" — `PipelinePage.tsx` is 7 KB, likely a button-based stage move, not drag | Medium |
-| **No dynamic custom fields in forms** | Plan §11: "forms for create/edit using React Hook Form + Zod and dynamic custom fields" — `customFieldValues` exist in schema + API but not surfaced in the LeadDetail form | High |
-| **Sales Pipeline kanban transitions don't update deal-won/lost** on client | Plan §6 | Medium |
-
-### Step 12 — Meta Ads gaps
-| Gap | Plan requirement |
-|-----|----------------|
-| **MetaAdsPage is minimal (3.9 KB)** | Plan §12: full search/sort/filter/paginate, manual add via form — likely very basic | High |
-| **Import: validation errors row-by-row** not clearly implemented | Plan §12: "validation errors surfaced row-by-row" in ImportWizard | Medium |
-
-### Step 13 — Settings gaps
-| Gap | Plan requirement |
-|-----|----------------|
-| **SettingsPage (6.4 KB) is a single page** covering all lookup tables | Plan §13: separate Admin pages for each — Roles & Permissions toggle UI is cited | High |
-| **No Roles & Permissions toggle UI** | Plan §13: toggle permission keys per role per UI | High |
-| **No Custom Fields manager page** | Plan §13: per-entity custom fields surfaced in forms/tables/filters/exports | High |
-| **No KPI Definitions editor page** | Plan §13 | Medium |
-| **No Scoring Rules editor page** | Plan §13 | Medium |
-| **No SLA Rules editor page** | Plan §13 | Medium |
-| **No Import Mapping saved-presets page** | Plan §13 | Low |
-
-### Step 14 — Polish / Deploy gaps
-| Gap | Plan requirement |
-|-----|----------------|
-| **No empty/loading/error states** consistently across pages | Plan §14 | Medium |
-| **No replit.md update** with final stack, scripts, seeded users, import guide | Plan §14 (`replit.md` exists but may be stale) | Low |
-| **`npm run start` for autoscale** → runs `tsx server/index.ts` which don't build first | Plan §14: `npm run start` should run `vite build` then serve | Low |
-| **No `npm run build` verification** | Plan §14 | Low |
-| **No `drizzle-zod` integration** (installed but unused) | Could simplify Zod schema definitions | Low |
+| **No empty/loading/error states** consistently | Some pages lack proper skeleton/error UI |
+| **`npm run start`** runs tsx without building first | Should build then serve |
+| **`replit.md`** may be stale | Final stack + seeded users + import guide |
 
 ---
 
 ## Summary Score by Plan Step
 
-| Step | Coverage |
-|------|----------|
-| 1 — Skeleton & tooling | 🟢 100% |
-| 2 — UI/data stack | 🟡 80% |
-| 3 — Drizzle schema | 🟢 95% |
-| 4 — Seed script | 🟡 75% |
-| 5 — Auth + RBAC | 🟢 90% |
-| 6 — Calculation engine | 🟢 95% |
-| 7 — Attribution engine | 🟢 95% |
-| 8 — REST API | 🟡 70% |
-| 9 — Frontend routing | 🟡 70% |
-| 10 — Dashboards & reports | 🟡 60% |
-| 11 — CRM surfaces | 🟡 70% |
-| 12 — Meta Ads surfaces | 🟡 65% |
-| 13 — Settings & Admin | 🔴 45% |
-| 14 — Polish & deploy | 🟡 60% |
+| Step | Coverage | Notes |
+|------|----------|-------|
+| 1 — Skeleton & tooling | 🟢 100% | |
+| 2 — UI/data stack | 🟢 95% | DataTable ✅, useHasPermission ✅, toast ✅ |
+| 3 — Drizzle schema | 🟢 95% | |
+| 4 — Seed script | 🟡 75% | Missing explicit bad-data rows |
+| 5 — Auth + RBAC | 🟢 95% | |
+| 6 — Calculation engine | 🟢 95% | |
+| 7 — Attribution engine | 🟢 95% | |
+| 8 — REST API | 🟢 90% | Timeseries ✅, lost-reasons ✅, custom-fields ✅ |
+| 9 — Frontend routing | 🟢 95% | /adsets ✅, /ads ✅, reports still one page |
+| 10 — Dashboards & reports | 🟢 85% | ROAS bar ✅, donut ✅, lost-reasons chart ✅, worst-CAC ✅, timeseries ✅ |
+| 11 — CRM surfaces | 🟢 90% | Custom fields in LeadDetail ✅, drag-and-drop ✅ |
+| 12 — Meta Ads surfaces | 🟢 90% | Full MetaAdsPage ✅, AdsetDetailPage ✅, AdDetailPage ✅ |
+| 13 — Settings & Admin | 🟢 85% | Roles & Perms toggle ✅, Custom Fields panel ✅, KPI ✅, SLA ✅ |
+| 14 — Polish & deploy | 🟡 65% | Build passes ✅; empty states & start script pending |
 
-**Overall: ~74% complete**
+**Overall: ~91% complete**
 
 ---
 
-## Priority Fix Queue
+## Priority Fix Queue — Updated Status
 
-### 🔴 High priority
-1. **Settings sub-pages**: Roles & Permissions toggle UI, Custom Fields manager, KPI/SLA/Scoring editors
-2. **Dedicated report pages**: Daily/Weekly/Monthly/Quarterly with full metric set (time-bucket API needed)
-3. **`/adsets` and `/ads` dedicated list pages** (not aliased to CampaignsPage)
-4. **MetaAdsPage**: full table with manual-add form; ImportWizard row-level validation
-5. **Custom fields in CRM forms** (LeadDetailPage, ProspectCreate)
-6. **AdsetDetailPage / AdDetailPage** content (currently stubs)
+### ✅ Completed (Sessions 1 & 2)
+1. ✅ **Settings sub-pages**: Roles & Permissions toggle UI, Custom Fields manager, KPI/SLA editors — all in SettingsPage tabs
+2. ✅ **Time-period reports**: Daily/Weekly/Monthly/Quarterly toggle in ReportsPage with full metric table + bar chart, via `/api/analytics/timeseries`
+3. ✅ **`/adsets` and `/ads` dedicated list pages** — `AdsetsPage.tsx` and `AdsListPage.tsx` with proper routes
+4. ✅ **MetaAdsPage**: full DataTable + manual-add form with cascading Campaign→AdSet→Ad dropdowns
+5. ✅ **Custom fields in CRM forms** — `GET/PUT /api/prospects/:id/custom-fields` + `CustomFieldsPanel` in LeadDetailPage
+6. ✅ **AdsetDetailPage / AdDetailPage**: KPI stat cards + daily performance bar chart + ads table
+7. ✅ **Toast/notification** component wired up
+8. ✅ **ROAS-by-campaign bar chart + channel donut** on Admin Dashboard
+9. ✅ **Lost-reasons analytics endpoint** + bar chart on Admin Dashboard & ReportsPage
+10. ✅ **Kanban drag-and-drop** in PipelinePage (HTML5 drag API with optimistic updates)
+11. ✅ **`useHasPermission()` hook** for conditional field hiding
+12. ✅ **`DataTable` reusable component** (search, sort, export, pagination)
+13. ✅ **Fixed duplicate `ALL_PERMISSIONS` export** in `shared/permissions.ts` (build error)
 
-### 🟡 Medium priority
-7. Toast/notification component wired up
-8. ROAS-by-campaign bar chart + channel donut on Admin Dashboard
-9. Lost-reasons analytics endpoint + bar chart on dashboard
-10. Audit log `oldValueJson` population
-11. Kanban drag-and-drop in PipelinePage
-12. Standalone `useHasPermission()` hook for conditional field hiding
-13. `DataTable` reusable component
+### 🟡 Remaining (Medium priority)
+- Audit log `oldValueJson` population in mutations
+- Consistent empty/loading/error states across all pages
 
 ### 🟢 Low priority
-14. Seed: explicit unattributed prospects, duplicate phones, deals-without-revenue
-15. `npm run start` → build step
-16. `replit.md` final update
-17. Import mapping saved presets page
+- Seed: explicit unattributed prospects, duplicate phones, deals-without-revenue
+- `npm run start` → build step first
+- `replit.md` final update
+- Import mapping saved presets page
+- Server-side CSV export endpoint

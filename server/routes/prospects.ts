@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { z } from "zod";
 import { db } from "../db";
-import { prospects, leadStages, leadStatuses, lostReasons, products, users, activities, deals } from "../../shared/schema";
+import { prospects, leadStages, leadStatuses, lostReasons, products, users, activities, deals, customFields, customFieldValues } from "../../shared/schema";
 import { eq, and, ilike, or, desc, asc, sql, gte, lte, inArray } from "drizzle-orm";
 import { requireAuth, requirePermission, type AuthedRequest } from "../middleware/auth";
 import { PERMISSIONS } from "../../shared/permissions";
@@ -304,6 +304,80 @@ router.delete("/:id", requireAuth, requirePermission(PERMISSIONS.LEADS_DELETE), 
   await db.delete(prospects).where(eq(prospects.id, id));
   await audit({ userId: req.user!.id, entityType: "prospect", entityId: id, action: "delete" });
   res.json({ ok: true });
+});
+
+// ── Custom field values for a prospect ──────────────────────────────────────
+
+// GET /api/prospects/:id/custom-fields
+// Returns all active custom fields for entity=prospect, with their saved value (if any)
+router.get("/:id/custom-fields", requireAuth, requirePermission(PERMISSIONS.LEADS_VIEW_ALL, PERMISSIONS.LEADS_VIEW_ASSIGNED), async (req: AuthedRequest, res) => {
+  const entityId = parseInt(req.params.id);
+  const fields = await db
+    .select()
+    .from(customFields)
+    .where(and(eq(customFields.entityType, "prospect"), eq(customFields.isActive, true)))
+    .orderBy(customFields.displayOrder, customFields.id);
+
+  const values = await db
+    .select()
+    .from(customFieldValues)
+    .where(and(eq(customFieldValues.entityType, "prospect"), eq(customFieldValues.entityId, entityId)));
+
+  const valueMap = new Map(values.map((v) => [v.customFieldId, v]));
+
+  const result = fields.map((f) => ({
+    ...f,
+    value: valueMap.get(f.id) ?? null,
+  }));
+
+  res.json(result);
+});
+
+// PUT /api/prospects/:id/custom-fields
+// Body: { values: { fieldId: number; valueText?: string; valueNumber?: string; valueDate?: string; valueJson?: any }[] }
+router.put("/:id/custom-fields", requireAuth, requirePermission(PERMISSIONS.LEADS_EDIT), async (req: AuthedRequest, res) => {
+  try {
+    const entityId = parseInt(req.params.id);
+    const { values: incoming } = z.object({
+      values: z.array(z.object({
+        fieldId: z.number().int(),
+        valueText: z.string().optional().nullable(),
+        valueNumber: z.union([z.string(), z.number()]).transform(String).optional().nullable(),
+        valueDate: z.string().optional().nullable(),
+        valueJson: z.any().optional().nullable(),
+      })),
+    }).parse(req.body);
+
+    for (const v of incoming) {
+      const existing = await db
+        .select()
+        .from(customFieldValues)
+        .where(and(eq(customFieldValues.customFieldId, v.fieldId), eq(customFieldValues.entityType, "prospect"), eq(customFieldValues.entityId, entityId)))
+        .limit(1);
+
+      const payload: any = {
+        customFieldId: v.fieldId,
+        entityType: "prospect",
+        entityId,
+        valueText: v.valueText ?? null,
+        valueNumber: v.valueNumber ?? null,
+        valueDate: v.valueDate ? new Date(v.valueDate) : null,
+        valueJson: v.valueJson ?? null,
+        updatedAt: new Date(),
+      };
+
+      if (existing[0]) {
+        await db.update(customFieldValues).set(payload).where(eq(customFieldValues.id, existing[0].id));
+      } else {
+        await db.insert(customFieldValues).values(payload);
+      }
+    }
+
+    await audit({ userId: req.user!.id, entityType: "prospect", entityId, action: "update_custom_fields", newValue: incoming });
+    res.json({ ok: true });
+  } catch (e: any) {
+    res.status(400).json({ error: e.message });
+  }
 });
 
 router.post(
