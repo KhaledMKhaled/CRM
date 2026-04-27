@@ -1,122 +1,70 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from './assets/vite.svg'
-import heroImg from './assets/hero.png'
-import './App.css'
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { QueryClientProvider } from "@tanstack/react-query";
+import { queryClient } from "@/lib/queryClient";
+import { AuthProvider } from "@/contexts/AuthContext";
+import { RequireAuth, RequirePermission } from "@/components/RequirePermission";
+import { AppLayout } from "@/components/layout/AppLayout";
+import { PERMISSIONS } from "@shared/permissions";
 
-function App() {
-  const [count, setCount] = useState(0)
+import LoginPage from "@/pages/LoginPage";
+import DashboardRouter from "@/pages/DashboardRouter";
+import LeadsPage from "@/pages/crm/LeadsPage";
+import LeadDetailPage from "@/pages/crm/LeadDetailPage";
+import PipelinePage from "@/pages/crm/PipelinePage";
+import ActivitiesPage from "@/pages/crm/ActivitiesPage";
+import TasksPage from "@/pages/crm/TasksPage";
+import DealsPage from "@/pages/crm/DealsPage";
+import MetaAdsPage from "@/pages/meta/MetaAdsPage";
+import CampaignsPage from "@/pages/meta/CampaignsPage";
+import ImportWizardPage from "@/pages/meta/ImportWizardPage";
+import ReportsPage from "@/pages/reports/ReportsPage";
+import SettingsPage from "@/pages/settings/SettingsPage";
+import UsersPage from "@/pages/admin/UsersPage";
+import DataQualityPage from "@/pages/admin/DataQualityPage";
+import AuditLogPage from "@/pages/admin/AuditLogPage";
+import IntegrationsPage from "@/pages/admin/IntegrationsPage";
 
+function ShellRoute({ children, perm }: { children: React.ReactNode; perm?: string | string[] }) {
   return (
-    <>
-      <section id="center">
-        <div className="hero">
-          <img src={heroImg} className="base" width="170" height="179" alt="" />
-          <img src={reactLogo} className="framework" alt="React logo" />
-          <img src={viteLogo} className="vite" alt="Vite logo" />
-        </div>
-        <div>
-          <h1>Get started</h1>
-          <p>
-            Edit <code>src/App.tsx</code> and save to test <code>HMR</code>
-          </p>
-        </div>
-        <button
-          type="button"
-          className="counter"
-          onClick={() => setCount((count) => count + 1)}
-        >
-          Count is {count}
-        </button>
-      </section>
-
-      <div className="ticks"></div>
-
-      <section id="next-steps">
-        <div id="docs">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#documentation-icon"></use>
-          </svg>
-          <h2>Documentation</h2>
-          <p>Your questions, answered</p>
-          <ul>
-            <li>
-              <a href="https://vite.dev/" target="_blank">
-                <img className="logo" src={viteLogo} alt="" />
-                Explore Vite
-              </a>
-            </li>
-            <li>
-              <a href="https://react.dev/" target="_blank">
-                <img className="button-icon" src={reactLogo} alt="" />
-                Learn more
-              </a>
-            </li>
-          </ul>
-        </div>
-        <div id="social">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#social-icon"></use>
-          </svg>
-          <h2>Connect with us</h2>
-          <p>Join the Vite community</p>
-          <ul>
-            <li>
-              <a href="https://github.com/vitejs/vite" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#github-icon"></use>
-                </svg>
-                GitHub
-              </a>
-            </li>
-            <li>
-              <a href="https://chat.vite.dev/" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#discord-icon"></use>
-                </svg>
-                Discord
-              </a>
-            </li>
-            <li>
-              <a href="https://x.com/vite_js" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#x-icon"></use>
-                </svg>
-                X.com
-              </a>
-            </li>
-            <li>
-              <a href="https://bsky.app/profile/vite.dev" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#bluesky-icon"></use>
-                </svg>
-                Bluesky
-              </a>
-            </li>
-          </ul>
-        </div>
-      </section>
-
-      <div className="ticks"></div>
-      <section id="spacer"></section>
-    </>
-  )
+    <RequireAuth>
+      <AppLayout>{perm ? <RequirePermission permission={perm}>{children}</RequirePermission> : children}</AppLayout>
+    </RequireAuth>
+  );
 }
 
-export default App
+export default function App() {
+  return (
+    <QueryClientProvider client={queryClient}>
+      <AuthProvider>
+        <BrowserRouter>
+          <Routes>
+            <Route path="/login" element={<LoginPage />} />
+
+            <Route path="/" element={<ShellRoute><DashboardRouter /></ShellRoute>} />
+
+            <Route path="/leads" element={<ShellRoute perm={[PERMISSIONS.LEADS_VIEW_ALL, PERMISSIONS.LEADS_VIEW_ASSIGNED]}><LeadsPage /></ShellRoute>} />
+            <Route path="/leads/:id" element={<ShellRoute perm={[PERMISSIONS.LEADS_VIEW_ALL, PERMISSIONS.LEADS_VIEW_ASSIGNED]}><LeadDetailPage /></ShellRoute>} />
+            <Route path="/pipeline" element={<ShellRoute perm={[PERMISSIONS.LEADS_VIEW_ALL, PERMISSIONS.LEADS_VIEW_ASSIGNED]}><PipelinePage /></ShellRoute>} />
+            <Route path="/activities" element={<ShellRoute perm={[PERMISSIONS.LEADS_VIEW_ALL, PERMISSIONS.LEADS_VIEW_ASSIGNED]}><ActivitiesPage /></ShellRoute>} />
+            <Route path="/tasks" element={<ShellRoute perm={[PERMISSIONS.LEADS_VIEW_ALL, PERMISSIONS.LEADS_VIEW_ASSIGNED]}><TasksPage /></ShellRoute>} />
+            <Route path="/deals" element={<ShellRoute perm={PERMISSIONS.DEALS_VIEW}><DealsPage /></ShellRoute>} />
+
+            <Route path="/meta-ads" element={<ShellRoute perm={PERMISSIONS.META_ADS_VIEW}><MetaAdsPage /></ShellRoute>} />
+            <Route path="/campaigns" element={<ShellRoute perm={PERMISSIONS.CAMPAIGNS_VIEW}><CampaignsPage /></ShellRoute>} />
+            <Route path="/imports" element={<ShellRoute perm={PERMISSIONS.IMPORTS_CREATE}><ImportWizardPage /></ShellRoute>} />
+
+            <Route path="/reports" element={<ShellRoute perm={[PERMISSIONS.REPORTS_ADMIN_VIEW, PERMISSIONS.REPORTS_SALES_VIEW, PERMISSIONS.REPORTS_MEDIA_VIEW]}><ReportsPage /></ShellRoute>} />
+
+            <Route path="/settings" element={<ShellRoute perm={PERMISSIONS.SETTINGS_VIEW}><SettingsPage /></ShellRoute>} />
+            <Route path="/users" element={<ShellRoute perm={PERMISSIONS.USERS_VIEW}><UsersPage /></ShellRoute>} />
+            <Route path="/data-quality" element={<ShellRoute perm={PERMISSIONS.SETTINGS_VIEW}><DataQualityPage /></ShellRoute>} />
+            <Route path="/audit" element={<ShellRoute perm={PERMISSIONS.AUDIT_VIEW}><AuditLogPage /></ShellRoute>} />
+            <Route path="/integrations" element={<ShellRoute perm={PERMISSIONS.SETTINGS_VIEW}><IntegrationsPage /></ShellRoute>} />
+
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Routes>
+        </BrowserRouter>
+      </AuthProvider>
+    </QueryClientProvider>
+  );
+}
