@@ -16,6 +16,7 @@ import taskRoutes from "./routes/tasks";
 import campaignRoutes from "./routes/campaigns";
 import metaRoutes from "./routes/meta";
 import analyticsRoutes from "./routes/analytics";
+import analyticsExtraRoutes from "./routes/analyticsExtra";
 import settingsRoutes from "./routes/settings";
 
 const __filename = fileURLToPath(import.meta.url);
@@ -71,6 +72,7 @@ app.use("/api/tasks", taskRoutes);
 app.use("/api/campaigns", campaignRoutes);
 app.use("/api/meta", metaRoutes);
 app.use("/api/analytics", analyticsRoutes);
+app.use("/api/analytics", analyticsExtraRoutes);
 app.use("/api/settings", settingsRoutes);
 
 // In production: serve built client

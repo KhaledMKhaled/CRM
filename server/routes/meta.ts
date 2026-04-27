@@ -30,14 +30,20 @@ router.get("/daily", requireAuth, requirePermission(PERMISSIONS.META_ADS_VIEW), 
       adsetName: adSets.adsetName,
       adId: metaDailyPerformance.adId,
       adName: ads.adName,
+      channel: metaDailyPerformance.channel,
       amountSpent: metaDailyPerformance.amountSpent,
       impressions: metaDailyPerformance.impressions,
       reach: metaDailyPerformance.reach,
       clicks: metaDailyPerformance.clicks,
+      linkClicks: metaDailyPerformance.linkClicks,
+      ctr: metaDailyPerformance.ctr,
+      cpc: metaDailyPerformance.cpc,
+      cpm: metaDailyPerformance.cpm,
       messagingConversationsStarted: metaDailyPerformance.messagingConversationsStarted,
       messagingConversationsReplied: metaDailyPerformance.messagingConversationsReplied,
       metaLeads: metaDailyPerformance.metaLeads,
       websiteRegistrationsCompleted: metaDailyPerformance.websiteRegistrationsCompleted,
+      purchases: metaDailyPerformance.purchases,
     })
     .from(metaDailyPerformance)
     .leftJoin(campaigns, eq(metaDailyPerformance.campaignId, campaigns.id))
@@ -48,6 +54,45 @@ router.get("/daily", requireAuth, requirePermission(PERMISSIONS.META_ADS_VIEW), 
     .limit(2000);
   res.json(rows);
 });
+
+// Manual single-row insert
+router.post("/daily", requireAuth, requirePermission(PERMISSIONS.META_ADS_EDIT), async (req: AuthedRequest, res) => {
+  try {
+    const body = z.object({
+      date: z.string(),
+      campaignId: z.number().int().optional().nullable(),
+      adsetId: z.number().int().optional().nullable(),
+      adId: z.number().int().optional().nullable(),
+      channel: z.string().optional().nullable(),
+      amountSpent: z.union([z.number(), z.string()]).transform((v) => String(v)),
+      impressions: z.number().int().optional().default(0),
+      reach: z.number().int().optional().default(0),
+      clicks: z.number().int().optional().default(0),
+      linkClicks: z.number().int().optional().default(0),
+      messagingConversationsStarted: z.number().int().optional().default(0),
+      messagingConversationsReplied: z.number().int().optional().default(0),
+      metaLeads: z.number().int().optional().default(0),
+      websiteRegistrationsCompleted: z.number().int().optional().default(0),
+      purchases: z.number().int().optional().default(0),
+    }).parse(req.body);
+
+    const dt = new Date(body.date + "T00:00:00Z");
+    const month = yearMonth(dt);
+    const week = isoWeek(dt);
+    const quarter = yearQuarter(dt);
+
+    const inserted = await db.insert(metaDailyPerformance).values({
+      ...body,
+      month, week, quarter,
+    }).returning();
+
+    await audit({ userId: req.user!.id, entityType: "meta_daily", entityId: inserted[0].id, action: "create", newValue: inserted[0] });
+    res.json(inserted[0]);
+  } catch (e: any) {
+    res.status(400).json({ error: e.message });
+  }
+});
+
 
 // Import: returns suggested mapping (peeked headers)
 router.post("/import/parse", requireAuth, requirePermission(PERMISSIONS.IMPORTS_CREATE), upload.single("file"), async (req: AuthedRequest, res) => {

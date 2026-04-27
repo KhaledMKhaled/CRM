@@ -2,7 +2,7 @@ import { Router } from "express";
 import { z } from "zod";
 import { db } from "../db";
 import { campaigns, adSets, ads } from "../../shared/schema";
-import { eq, desc } from "drizzle-orm";
+import { eq, desc, sql } from "drizzle-orm";
 import { requireAuth, requirePermission, type AuthedRequest } from "../middleware/auth";
 import { PERMISSIONS } from "../../shared/permissions";
 import { audit } from "../lib/audit";
@@ -89,11 +89,32 @@ router.patch("/:id", requireAuth, requirePermission(PERMISSIONS.CAMPAIGNS_EDIT),
   }
 });
 
-// AD SETS
+// AD SETS ─ flat list with joined campaign name
 router.get("/adsets", requireAuth, requirePermission(PERMISSIONS.CAMPAIGNS_VIEW), async (req, res) => {
   const campaignId = req.query.campaignId ? parseInt(req.query.campaignId as string) : undefined;
-  const where = campaignId ? eq(adSets.campaignId, campaignId) : undefined;
-  const rows = await db.select().from(adSets).where(where).orderBy(desc(adSets.createdAt));
+  let query = db
+    .select({
+      id: adSets.id,
+      campaignId: adSets.campaignId,
+      campaignName: campaigns.campaignName,
+      adsetName: adSets.adsetName,
+      audience: adSets.audience,
+      placement: adSets.placement,
+      optimizationGoal: adSets.optimizationGoal,
+      status: adSets.status,
+      budget: adSets.budget,
+      startDate: adSets.startDate,
+      endDate: adSets.endDate,
+      platformAdsetId: adSets.platformAdsetId,
+      notes: adSets.notes,
+      createdAt: adSets.createdAt,
+      updatedAt: adSets.updatedAt,
+    })
+    .from(adSets)
+    .leftJoin(campaigns, eq(adSets.campaignId, campaigns.id))
+    .$dynamic();
+  if (campaignId) query = query.where(eq(adSets.campaignId, campaignId)) as any;
+  const rows = await query.orderBy(desc(adSets.createdAt));
   res.json(rows);
 });
 
@@ -136,11 +157,36 @@ router.patch("/adsets/:id", requireAuth, requirePermission(PERMISSIONS.CAMPAIGNS
   }
 });
 
-// ADS
+// ADS ─ flat list with joined campaign + adset names
 router.get("/ads", requireAuth, requirePermission(PERMISSIONS.CAMPAIGNS_VIEW), async (req, res) => {
   const adsetId = req.query.adsetId ? parseInt(req.query.adsetId as string) : undefined;
-  const where = adsetId ? eq(ads.adsetId, adsetId) : undefined;
-  const rows = await db.select().from(ads).where(where).orderBy(desc(ads.createdAt));
+  const campaignId = req.query.campaignId ? parseInt(req.query.campaignId as string) : undefined;
+  let query = db
+    .select({
+      id: ads.id,
+      campaignId: ads.campaignId,
+      campaignName: campaigns.campaignName,
+      adsetId: ads.adsetId,
+      adsetName: adSets.adsetName,
+      adName: ads.adName,
+      creativeName: ads.creativeName,
+      creativeType: ads.creativeType,
+      primaryText: ads.primaryText,
+      headline: ads.headline,
+      cta: ads.cta,
+      status: ads.status,
+      platformAdId: ads.platformAdId,
+      notes: ads.notes,
+      createdAt: ads.createdAt,
+      updatedAt: ads.updatedAt,
+    })
+    .from(ads)
+    .leftJoin(adSets, eq(ads.adsetId, adSets.id))
+    .leftJoin(campaigns, eq(ads.campaignId, campaigns.id))
+    .$dynamic();
+  if (adsetId) query = query.where(eq(ads.adsetId, adsetId)) as any;
+  else if (campaignId) query = query.where(eq(ads.campaignId, campaignId)) as any;
+  const rows = await query.orderBy(desc(ads.createdAt));
   res.json(rows);
 });
 

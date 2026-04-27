@@ -98,3 +98,7 @@ export const ROLES = {
   SALES: "Sales Execution",
   MEDIA: "Media Buyer",
 } as const;
+
+// All permission keys — used by the Roles & Permissions editor UI
+export const ALL_PERMISSIONS = Object.values(PERMISSIONS);
+

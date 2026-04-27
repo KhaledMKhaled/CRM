@@ -39,7 +39,9 @@ const NAV: NavItem[] = [
   { to: "/deals", label: "Deals", icon: Briefcase, perm: PERMISSIONS.DEALS_VIEW },
 
   { to: "/meta-ads", label: "Meta Ads", icon: Megaphone, perm: PERMISSIONS.META_ADS_VIEW, section: "Marketing" },
-  { to: "/campaigns", label: "Campaigns & Ads", icon: Boxes, perm: PERMISSIONS.CAMPAIGNS_VIEW },
+  { to: "/campaigns", label: "Campaigns", icon: Boxes, perm: PERMISSIONS.CAMPAIGNS_VIEW },
+  { to: "/adsets", label: "Ad Sets", icon: Boxes, perm: PERMISSIONS.CAMPAIGNS_VIEW },
+  { to: "/ads", label: "Ads", icon: Boxes, perm: PERMISSIONS.CAMPAIGNS_VIEW },
   { to: "/attribution", label: "Attribution", icon: Target, perm: PERMISSIONS.SETTINGS_VIEW },
   { to: "/imports", label: "Import Wizard", icon: FileSpreadsheet, perm: PERMISSIONS.IMPORTS_CREATE },
 

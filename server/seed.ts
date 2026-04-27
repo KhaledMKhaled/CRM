@@ -574,6 +574,94 @@ async function seedProspectsAndDeals(usersAll: any[], camps: any[], adSetsList: 
   return allInserted.length;
 }
 
+async function seedDataQualityIssues(usersAll: any[], stages: any[]) {
+  const stageNew = stages.find((s) => s.stageName === "Prospect") ?? stages[0];
+  const salesUsers = usersAll.filter((u) => u.team === "Sales");
+  const sharedPhone = `+20111${ri(10000000, 99999999)}`;
+
+  // 15 unattributed prospects (no campaign, no adset, no ad)
+  for (let i = 0; i < 15; i++) {
+    const fn = pick(FIRST_NAMES);
+    const ln = pick(LAST_NAMES);
+    const counter = 9000 + i;
+    await db.insert(prospects).values({
+      prospectCode: `P-DQ${String(counter).padStart(4, "0")}`,
+      firstName: fn,
+      lastName: ln,
+      fullName: `${fn} ${ln}`,
+      phone: `+201${ri(0, 1)}${ri(10000000, 99999999)}`,
+      email: `${fn.toLowerCase()}.dq${i}@example.com`,
+      channel: "Website Form",
+      source: "Unknown",
+      campaignId: null,
+      adsetId: null,
+      adId: null,
+      isAttributed: false,
+      createdDate: new Date(`2026-0${ri(4, 6)}-${String(ri(1, 28)).padStart(2, "0")}T10:00:00Z`),
+      assignedSalesId: pick(salesUsers).id,
+      leadStageId: stageNew.id,
+    });
+  }
+
+  // 5 duplicate-phone pairs (same phone, different records)
+  for (let i = 0; i < 5; i++) {
+    const dupPhone = `+20100${ri(1000000, 9999999)}`;
+    for (let j = 0; j < 2; j++) {
+      const fn = pick(FIRST_NAMES);
+      const ln = pick(LAST_NAMES);
+      await db.insert(prospects).values({
+        prospectCode: `P-DUP${i}${j}`,
+        firstName: fn,
+        lastName: ln,
+        fullName: `${fn} ${ln}`,
+        phone: dupPhone, // same phone — intentional duplicate
+        email: `dup.${i}.${j}@example.com`,
+        channel: "WhatsApp",
+        source: "Duplicate test",
+        isAttributed: false,
+        createdDate: new Date(`2026-05-${String(ri(1, 30)).padStart(2, "0")}T09:00:00Z`),
+        assignedSalesId: pick(salesUsers).id,
+        leadStageId: stageNew.id,
+      });
+    }
+  }
+
+  // 3 "won" prospects whose deals have no actualRevenue
+  for (let i = 0; i < 3; i++) {
+    const fn = pick(FIRST_NAMES);
+    const ln = pick(LAST_NAMES);
+    const p = await db.insert(prospects).values({
+      prospectCode: `P-NREV${i}`,
+      firstName: fn,
+      lastName: ln,
+      fullName: `${fn} ${ln}`,
+      phone: `+20112${ri(1000000, 9999999)}`,
+      email: `norev.${i}@example.com`,
+      channel: "Phone Call",
+      source: "Referral",
+      isAttributed: false,
+      createdDate: new Date("2026-04-15T08:00:00Z"),
+      assignedSalesId: pick(salesUsers).id,
+      leadStageId: stageNew.id,
+      wonAt: new Date("2026-05-01T10:00:00Z"),
+    }).returning();
+
+    await db.insert(deals).values({
+      prospectId: p[0].id,
+      dealName: `No-Revenue Deal ${i}`,
+      dealStage: "Won",
+      dealStatus: "won",
+      expectedRevenue: "5000.00",
+      actualRevenue: "0.00", // intentional — won deal but no actual revenue recorded
+      currency: "EGP",
+      wonDate: "2026-05-01",
+      salesOwnerId: pick(salesUsers).id,
+    });
+  }
+
+  console.log("  ✓ data quality issues: 15 unattributed, 5 dup-phone pairs, 3 zero-revenue won deals");
+}
+
 async function main() {
   console.log("Clearing existing data…");
   await clearAll();
@@ -601,6 +689,9 @@ async function main() {
   const prospectsCount = await seedProspectsAndDeals(usersAll, camps, adSetsList, adsList, stages, prods);
   console.log(`  ✓ ${prospectsCount} prospects (with activities, deals, tasks)`);
 
+  console.log("Seeding intentional data-quality issues…");
+  await seedDataQualityIssues(usersAll, stages);
+
   console.log("\n✅ Seed complete.");
   console.log("\nDefault users:");
   console.log("  admin@mofawtar.com / Admin123456");
@@ -616,3 +707,4 @@ main().catch(async (e) => {
   await pool.end();
   process.exit(1);
 });
+

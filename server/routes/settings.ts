@@ -51,8 +51,9 @@ function crud<T extends Record<string, any>>(
     try {
       const id = parseInt(req.params.id);
       const data = (schema as any).partial().parse(req.body);
+      const oldRows = await db.select().from(table).where(eq(table.id, id)).limit(1);
       const u = await db.update(table).set({ ...data, updatedAt: new Date() }).where(eq(table.id, id)).returning();
-      await audit({ userId: req.user!.id, entityType: path, entityId: id, action: "update", newValue: u[0] });
+      await audit({ userId: req.user!.id, entityType: path, entityId: id, action: "update", oldValue: oldRows[0] ?? null, newValue: u[0] });
       res.json(u[0]);
     } catch (e: any) {
       res.status(400).json({ error: e.message });
