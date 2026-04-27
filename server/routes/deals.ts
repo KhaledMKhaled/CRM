@@ -9,6 +9,14 @@ import { audit } from "../lib/audit";
 
 const router = Router();
 
+router.get("/:id", requireAuth, requirePermission(PERMISSIONS.DEALS_VIEW), async (req, res, next) => {
+  const id = parseInt(req.params.id);
+  if (!Number.isFinite(id)) return next();
+  const [row] = await db.select().from(deals).where(eq(deals.id, id)).limit(1);
+  if (!row) return res.status(404).json({ error: "deal not found" });
+  res.json(row);
+});
+
 router.get("/", requireAuth, requirePermission(PERMISSIONS.DEALS_VIEW), async (_req, res) => {
   const rows = await db
     .select({

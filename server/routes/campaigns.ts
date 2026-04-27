@@ -15,6 +15,35 @@ router.get("/", requireAuth, requirePermission(PERMISSIONS.CAMPAIGNS_VIEW), asyn
   res.json(rows);
 });
 
+// Single-resource GETs.
+// NOTE: in Express 5 path-to-regexp does not allow inline regex constraints, so
+// we accept any :id and validate it's numeric to avoid clashing with the
+// /adsets and /ads child routes (those are declared as more specific paths
+// below and Express's router prefers exact static segments over :id).
+router.get("/adsets/:id", requireAuth, requirePermission(PERMISSIONS.CAMPAIGNS_VIEW), async (req, res) => {
+  const id = parseInt(req.params.id);
+  if (!Number.isFinite(id)) return res.status(400).json({ error: "invalid id" });
+  const [row] = await db.select().from(adSets).where(eq(adSets.id, id)).limit(1);
+  if (!row) return res.status(404).json({ error: "ad set not found" });
+  res.json(row);
+});
+
+router.get("/ads/:id", requireAuth, requirePermission(PERMISSIONS.CAMPAIGNS_VIEW), async (req, res) => {
+  const id = parseInt(req.params.id);
+  if (!Number.isFinite(id)) return res.status(400).json({ error: "invalid id" });
+  const [row] = await db.select().from(ads).where(eq(ads.id, id)).limit(1);
+  if (!row) return res.status(404).json({ error: "ad not found" });
+  res.json(row);
+});
+
+router.get("/:id", requireAuth, requirePermission(PERMISSIONS.CAMPAIGNS_VIEW), async (req, res) => {
+  const id = parseInt(req.params.id);
+  if (!Number.isFinite(id)) return res.status(400).json({ error: "invalid id" });
+  const [row] = await db.select().from(campaigns).where(eq(campaigns.id, id)).limit(1);
+  if (!row) return res.status(404).json({ error: "campaign not found" });
+  res.json(row);
+});
+
 const campaignSchema = z.object({
   campaignName: z.string().min(1),
   objective: z.string().optional(),

@@ -3,6 +3,7 @@ import session from "express-session";
 import cors from "cors";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { randomBytes } from "node:crypto";
 import connectPgSimple from "connect-pg-simple";
 import { pool } from "./db";
 import { loadUser } from "./middleware/auth";
@@ -25,6 +26,14 @@ const isProd = process.env.NODE_ENV === "production";
 if (isProd && (!process.env.SESSION_SECRET || process.env.SESSION_SECRET.length < 32)) {
   throw new Error("SESSION_SECRET must be set to a strong value (>= 32 chars) in production");
 }
+// In dev, auto-generate a per-process secret instead of shipping a hardcoded one.
+// This means dev sessions reset on server restart (intentional) and no weak default
+// secret ever lives in source control.
+if (!process.env.SESSION_SECRET) {
+  process.env.SESSION_SECRET = randomBytes(48).toString("hex");
+  // eslint-disable-next-line no-console
+  console.warn("[session] SESSION_SECRET not set — generated an ephemeral dev secret. Set SESSION_SECRET in your env to keep sessions across restarts.");
+}
 
 const app = express();
 if (isProd) app.set("trust proxy", 1);
@@ -38,7 +47,7 @@ app.use(
   session({
     store: new PgStore({ pool, tableName: "session", createTableIfMissing: true }),
     name: "mofawtar.sid",
-    secret: process.env.SESSION_SECRET || "mofawtar-dev-secret-change-me",
+    secret: process.env.SESSION_SECRET!,
     resave: false,
     saveUninitialized: false,
     cookie: {

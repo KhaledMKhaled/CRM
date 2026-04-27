@@ -82,9 +82,9 @@ async function seedRolesAndUsers() {
   const [adminRole] = await db
     .insert(roles)
     .values([
-      { name: ROLES.ADMIN, description: "Full access to all features and data", permissionsJson: ADMIN_PERMISSIONS as unknown as any },
-      { name: ROLES.SALES, description: "Manages assigned leads, deals, activities; sees own pipeline & reports", permissionsJson: SALES_PERMISSIONS as unknown as any },
-      { name: ROLES.MEDIA, description: "Manages campaigns, ad sets, ads, Meta imports, and ROAS reports", permissionsJson: MEDIA_PERMISSIONS as unknown as any },
+      { name: ROLES.ADMIN, description: "Full access to all features and data", permissionsJson: [...ADMIN_PERMISSIONS] },
+      { name: ROLES.SALES, description: "Manages assigned leads, deals, activities; sees own pipeline & reports", permissionsJson: [...SALES_PERMISSIONS] },
+      { name: ROLES.MEDIA, description: "Manages campaigns, ad sets, ads, Meta imports, and ROAS reports", permissionsJson: [...MEDIA_PERMISSIONS] },
     ])
     .returning();
 
@@ -116,14 +116,18 @@ async function seedLookups() {
   const stages = await db
     .insert(leadStages)
     .values([
-      { stageName: "New",          stageOrder: 1, stageType: "active", isSystemDefault: true },
-      { stageName: "Contacted",    stageOrder: 2, stageType: "active", isSystemDefault: true },
-      { stageName: "Qualified (MQL)", stageOrder: 3, stageType: "active", isSystemDefault: true },
-      { stageName: "SQL",          stageOrder: 4, stageType: "active", isSystemDefault: true },
-      { stageName: "Proposal",     stageOrder: 5, stageType: "active", isSystemDefault: true },
-      { stageName: "Negotiation",  stageOrder: 6, stageType: "active", isSystemDefault: true },
-      { stageName: "Won",          stageOrder: 7, stageType: "won",    isSystemDefault: true },
-      { stageName: "Lost",         stageOrder: 8, stageType: "lost",   isSystemDefault: true },
+      { stageName: "Prospect",         stageOrder: 1,  stageType: "active", isSystemDefault: true },
+      { stageName: "Lead",             stageOrder: 2,  stageType: "active", isSystemDefault: true },
+      { stageName: "Contacted",        stageOrder: 3,  stageType: "active", isSystemDefault: true },
+      { stageName: "Qualified (MQL)",  stageOrder: 4,  stageType: "active", isSystemDefault: true },
+      { stageName: "SQL",              stageOrder: 5,  stageType: "active", isSystemDefault: true },
+      { stageName: "Demo Scheduled",   stageOrder: 6,  stageType: "active", isSystemDefault: true },
+      { stageName: "Proposal",         stageOrder: 7,  stageType: "active", isSystemDefault: true },
+      { stageName: "Quote Sent",       stageOrder: 8,  stageType: "active", isSystemDefault: true },
+      { stageName: "Negotiation",      stageOrder: 9,  stageType: "active", isSystemDefault: true },
+      { stageName: "Nurture",          stageOrder: 10, stageType: "active", isSystemDefault: true },
+      { stageName: "Won",              stageOrder: 11, stageType: "won",    isSystemDefault: true },
+      { stageName: "Lost",             stageOrder: 12, stageType: "lost",   isSystemDefault: true },
     ])
     .returning();
 
@@ -354,7 +358,7 @@ async function seedMetaDailyPerformance(camps: any[], adSetsList: any[], adsList
 
 async function seedProspectsAndDeals(usersAll: any[], camps: any[], adSetsList: any[], adsList: any[], stages: any[], products_: any[]) {
   const sales = usersAll.filter((u) => u.team === "Sales");
-  const stageNew = stages.find((s) => s.stageName === "New")!;
+  const stageNew = (stages.find((s) => s.stageName === "Prospect") ?? stages.find((s) => s.stageName === "Lead"))!;
   const stageContacted = stages.find((s) => s.stageName === "Contacted")!;
   const stageMql = stages.find((s) => s.stageName === "Qualified (MQL)")!;
   const stageSql = stages.find((s) => s.stageName === "SQL")!;

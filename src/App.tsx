@@ -16,7 +16,11 @@ import TasksPage from "@/pages/crm/TasksPage";
 import DealsPage from "@/pages/crm/DealsPage";
 import MetaAdsPage from "@/pages/meta/MetaAdsPage";
 import CampaignsPage from "@/pages/meta/CampaignsPage";
+import CampaignDetailPage from "@/pages/meta/CampaignDetailPage";
+import AdsetDetailPage from "@/pages/meta/AdsetDetailPage";
+import AdDetailPage from "@/pages/meta/AdDetailPage";
 import ImportWizardPage from "@/pages/meta/ImportWizardPage";
+import DealDetailPage from "@/pages/crm/DealDetailPage";
 import AttributionPage from "@/pages/admin/AttributionPage";
 import ReportsPage from "@/pages/reports/ReportsPage";
 import SettingsPage from "@/pages/settings/SettingsPage";
@@ -45,15 +49,22 @@ export default function App() {
 
             <Route path="/leads" element={<ShellRoute perm={[PERMISSIONS.LEADS_VIEW_ALL, PERMISSIONS.LEADS_VIEW_ASSIGNED]}><LeadsPage /></ShellRoute>} />
             <Route path="/leads/:id" element={<ShellRoute perm={[PERMISSIONS.LEADS_VIEW_ALL, PERMISSIONS.LEADS_VIEW_ASSIGNED]}><LeadDetailPage /></ShellRoute>} />
+            {/* "Prospects" is the spec term; keep both URL forms for navigation */}
+            <Route path="/prospects" element={<ShellRoute perm={[PERMISSIONS.LEADS_VIEW_ALL, PERMISSIONS.LEADS_VIEW_ASSIGNED]}><LeadsPage /></ShellRoute>} />
+            <Route path="/prospects/:id" element={<ShellRoute perm={[PERMISSIONS.LEADS_VIEW_ALL, PERMISSIONS.LEADS_VIEW_ASSIGNED]}><LeadDetailPage /></ShellRoute>} />
             <Route path="/pipeline" element={<ShellRoute perm={[PERMISSIONS.LEADS_VIEW_ALL, PERMISSIONS.LEADS_VIEW_ASSIGNED]}><PipelinePage /></ShellRoute>} />
             <Route path="/activities" element={<ShellRoute perm={[PERMISSIONS.LEADS_VIEW_ALL, PERMISSIONS.LEADS_VIEW_ASSIGNED]}><ActivitiesPage /></ShellRoute>} />
             <Route path="/tasks" element={<ShellRoute perm={[PERMISSIONS.LEADS_VIEW_ALL, PERMISSIONS.LEADS_VIEW_ASSIGNED]}><TasksPage /></ShellRoute>} />
             <Route path="/deals" element={<ShellRoute perm={PERMISSIONS.DEALS_VIEW}><DealsPage /></ShellRoute>} />
+            <Route path="/deals/:id" element={<ShellRoute perm={PERMISSIONS.DEALS_VIEW}><DealDetailPage /></ShellRoute>} />
 
             <Route path="/meta-ads" element={<ShellRoute perm={PERMISSIONS.META_ADS_VIEW}><MetaAdsPage /></ShellRoute>} />
             <Route path="/campaigns" element={<ShellRoute perm={PERMISSIONS.CAMPAIGNS_VIEW}><CampaignsPage /></ShellRoute>} />
+            <Route path="/campaigns/:id" element={<ShellRoute perm={PERMISSIONS.CAMPAIGNS_VIEW}><CampaignDetailPage /></ShellRoute>} />
             <Route path="/adsets" element={<ShellRoute perm={PERMISSIONS.CAMPAIGNS_VIEW}><CampaignsPage /></ShellRoute>} />
+            <Route path="/adsets/:id" element={<ShellRoute perm={PERMISSIONS.CAMPAIGNS_VIEW}><AdsetDetailPage /></ShellRoute>} />
             <Route path="/ads" element={<ShellRoute perm={PERMISSIONS.CAMPAIGNS_VIEW}><CampaignsPage /></ShellRoute>} />
+            <Route path="/ads/:id" element={<ShellRoute perm={PERMISSIONS.CAMPAIGNS_VIEW}><AdDetailPage /></ShellRoute>} />
             <Route path="/imports" element={<ShellRoute perm={PERMISSIONS.IMPORTS_CREATE}><ImportWizardPage /></ShellRoute>} />
             <Route path="/attribution" element={<ShellRoute perm={PERMISSIONS.SETTINGS_VIEW}><AttributionPage /></ShellRoute>} />
 
