@@ -1,9 +1,11 @@
 import { Router } from "express";
 import { db } from "../db";
-import { prospects, deals, activities, leadStages } from "../../shared/schema";
-import { sql, and, gte, lte, eq, isNull } from "drizzle-orm";
+import { prospects, deals, activities, leadStages, campaigns, adSets, ads } from "../../shared/schema";
+import { sql, and, gte, lte, eq, isNull, desc } from "drizzle-orm";
 import { requireAuth, requirePermission, type AuthedRequest } from "../middleware/auth";
 import { PERMISSIONS } from "../../shared/permissions";
+import { reattributeAllProspects } from "../lib/attribution";
+import { audit } from "../lib/audit";
 import {
   getOverallMetrics,
   getDailyTrend,
@@ -165,6 +167,59 @@ router.get("/data-quality", requireAuth, requireReports, async (_req, res) => {
     .where(sql`${prospects.email} IS NULL OR ${prospects.email} = ''`);
   const missingEmail = parseInt(noEmailAgg[0]?.n ?? "0");
 
+  // Prospects with no owner assigned
+  const noOwnerAgg = await db
+    .select({ n: sql<string>`COUNT(*)` })
+    .from(prospects)
+    .where(isNull(prospects.assignedSalesId));
+  const missingOwner = parseInt(noOwnerAgg[0]?.n ?? "0");
+
+  // Prospects with no stage
+  const noStageAgg = await db
+    .select({ n: sql<string>`COUNT(*)` })
+    .from(prospects)
+    .where(isNull(prospects.leadStageId));
+  const missingStage = parseInt(noStageAgg[0]?.n ?? "0");
+
+  // Duplicate phones (>1 prospect sharing the same normalized phone)
+  const dupPhoneAgg = await db.execute(sql`
+    SELECT COUNT(*) AS n FROM (
+      SELECT phone FROM prospects
+      WHERE phone IS NOT NULL AND phone <> ''
+      GROUP BY phone HAVING COUNT(*) > 1
+    ) t
+  `);
+  const duplicatePhones = parseInt((dupPhoneAgg.rows?.[0] as any)?.n ?? "0");
+
+  // Duplicate emails
+  const dupEmailAgg = await db.execute(sql`
+    SELECT COUNT(*) AS n FROM (
+      SELECT LOWER(email) AS e FROM prospects
+      WHERE email IS NOT NULL AND email <> ''
+      GROUP BY LOWER(email) HAVING COUNT(*) > 1
+    ) t
+  `);
+  const duplicateEmails = parseInt((dupEmailAgg.rows?.[0] as any)?.n ?? "0");
+
+  // Deals without a product
+  const dealsNoProductAgg = await db
+    .select({ n: sql<string>`COUNT(*)` })
+    .from(deals)
+    .where(isNull(deals.productId));
+  const dealsMissingProduct = parseInt(dealsNoProductAgg[0]?.n ?? "0");
+
+  // Open deals past their expected close date
+  const overdueDealsAgg = await db
+    .select({ n: sql<string>`COUNT(*)` })
+    .from(deals)
+    .where(
+      and(
+        eq(deals.dealStatus, "open"),
+        sql`${deals.closeDate} IS NOT NULL AND ${deals.closeDate} < CURRENT_DATE`
+      )
+    );
+  const overdueDeals = parseInt(overdueDealsAgg[0]?.n ?? "0");
+
   // Stale: open prospects (not won/lost) with no activity in 14+ days.
   const cutoff = new Date(Date.now() - 14 * 24 * 60 * 60 * 1000);
   const staleRows = await db
@@ -194,7 +249,152 @@ router.get("/data-quality", requireAuth, requireReports, async (_req, res) => {
     return { ...s, daysSinceActivity: days };
   });
 
-  res.json({ total, unattributed, missingPhone, missingEmail, stale });
+  res.json({
+    total,
+    unattributed,
+    missingPhone,
+    missingEmail,
+    missingOwner,
+    missingStage,
+    duplicatePhones,
+    duplicateEmails,
+    dealsMissingProduct,
+    overdueDeals,
+    stale,
+  });
 });
+
+// Unattributed prospects (admin queue)
+router.get(
+  "/unattributed",
+  requireAuth,
+  requirePermission(PERMISSIONS.SETTINGS_VIEW),
+  async (req: AuthedRequest, res) => {
+    const limit = Math.min(parseInt((req.query.limit as string) ?? "100"), 500);
+    const rows = await db
+      .select({
+        id: prospects.id,
+        fullName: prospects.fullName,
+        channel: prospects.channel,
+        utmCampaign: prospects.utmCampaign,
+        utmContent: prospects.utmContent,
+        utmTerm: prospects.utmTerm,
+        campaignNameSnapshot: prospects.campaignNameSnapshot,
+        adsetNameSnapshot: prospects.adsetNameSnapshot,
+        adNameSnapshot: prospects.adNameSnapshot,
+        createdAt: prospects.createdAt,
+      })
+      .from(prospects)
+      .where(eq(prospects.isAttributed, false))
+      .orderBy(desc(prospects.createdAt))
+      .limit(limit);
+    res.json(rows);
+  }
+);
+
+// Re-run attribution priority chain on all unattributed prospects
+router.post(
+  "/reattribute",
+  requireAuth,
+  requirePermission(PERMISSIONS.SETTINGS_VIEW),
+  async (req: AuthedRequest, res) => {
+    try {
+      const updated = await reattributeAllProspects();
+      await audit({
+        userId: req.user!.id,
+        entityType: "attribution",
+        entityId: 0,
+        action: "reattribute_all",
+        newValue: { updated },
+      });
+      res.json({ updated });
+    } catch (e: any) {
+      res.status(500).json({ error: e.message });
+    }
+  }
+);
+
+// Manually attribute a single prospect
+router.post(
+  "/attribute/:id",
+  requireAuth,
+  requirePermission(PERMISSIONS.SETTINGS_VIEW),
+  async (req: AuthedRequest, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const { campaignId, adsetId, adId } = req.body as {
+        campaignId?: number | null;
+        adsetId?: number | null;
+        adId?: number | null;
+      };
+      if (!campaignId) return res.status(400).json({ error: "campaignId required" });
+
+      const [c] = await db.select().from(campaigns).where(eq(campaigns.id, campaignId)).limit(1);
+      if (!c) return res.status(404).json({ error: "campaign not found" });
+
+      let asRow = null as any;
+      if (adsetId) {
+        const r = await db.select().from(adSets).where(eq(adSets.id, adsetId)).limit(1);
+        asRow = r[0];
+        if (!asRow) return res.status(404).json({ error: "ad set not found" });
+        if (asRow.campaignId !== campaignId) {
+          return res.status(400).json({ error: "ad set does not belong to campaign" });
+        }
+      }
+
+      let adRow = null as any;
+      let resolvedAdsetId: number | null = adsetId ?? null;
+      if (adId) {
+        const r = await db.select().from(ads).where(eq(ads.id, adId)).limit(1);
+        adRow = r[0];
+        if (!adRow) return res.status(404).json({ error: "ad not found" });
+        // Always validate the full ad → adset → campaign chain.
+        if (adRow.campaignId !== campaignId) {
+          return res.status(400).json({ error: "ad does not belong to campaign" });
+        }
+        if (adsetId) {
+          if (adRow.adsetId !== adsetId) {
+            return res.status(400).json({ error: "ad does not belong to ad set" });
+          }
+        } else if (adRow.adsetId) {
+          // Caller omitted adsetId — derive it from the ad and re-validate against campaign.
+          const r2 = await db.select().from(adSets).where(eq(adSets.id, adRow.adsetId)).limit(1);
+          asRow = r2[0];
+          if (!asRow || asRow.campaignId !== campaignId) {
+            return res.status(400).json({ error: "derived ad set does not belong to campaign" });
+          }
+          resolvedAdsetId = adRow.adsetId;
+        }
+      }
+
+      const updated = await db
+        .update(prospects)
+        .set({
+          campaignId,
+          adsetId: resolvedAdsetId,
+          adId: adId ?? null,
+          campaignNameSnapshot: c.campaignName,
+          adsetNameSnapshot: asRow?.adsetName ?? null,
+          adNameSnapshot: adRow?.adName ?? null,
+          isAttributed: true,
+          updatedAt: new Date(),
+        })
+        .where(eq(prospects.id, id))
+        .returning();
+      if (!updated[0]) return res.status(404).json({ error: "prospect not found" });
+
+      await audit({
+        userId: req.user!.id,
+        entityType: "prospect",
+        entityId: id,
+        action: "manual_attribute",
+        newValue: { campaignId, adsetId, adId },
+      });
+      res.json(updated[0]);
+    } catch (e: any) {
+      res.status(400).json({ error: e.message });
+    }
+  }
+);
 
 export default router;

@@ -240,11 +240,22 @@ router.patch("/:id", requireAuth, requirePermission(PERMISSIONS.LEADS_EDIT), asy
     const updates: any = { ...data, updatedAt: new Date() };
     if (data.email === "") updates.email = null;
 
-    // Stage transitions → set timestamps
-    if (data.leadStageId) {
+    // Stage transitions → set timestamps + log a stage-change activity automatically
+    let prevStageName: string | null = null;
+    let nextStageName: string | null = null;
+    if (data.leadStageId && data.leadStageId !== existing[0].leadStageId) {
       const stage = await db.select().from(leadStages).where(eq(leadStages.id, data.leadStageId)).limit(1);
       const stageType = stage[0]?.stageType;
       const stageName = stage[0]?.stageName?.toLowerCase() ?? "";
+      nextStageName = stage[0]?.stageName ?? null;
+      if (existing[0].leadStageId) {
+        const prev = await db
+          .select({ stageName: leadStages.stageName })
+          .from(leadStages)
+          .where(eq(leadStages.id, existing[0].leadStageId))
+          .limit(1);
+        prevStageName = prev[0]?.stageName ?? null;
+      }
       if (stageType === "won" || stageName.includes("won")) {
         updates.wonAt = updates.wonAt || new Date();
       }
@@ -256,6 +267,24 @@ router.patch("/:id", requireAuth, requirePermission(PERMISSIONS.LEADS_EDIT), asy
     }
 
     const updated = await db.update(prospects).set(updates).where(eq(prospects.id, id)).returning();
+
+    // Stage-change activity (after the update so the timestamp lines up)
+    if (nextStageName) {
+      await db.insert(activities).values({
+        prospectId: id,
+        userId: req.user!.id,
+        activityType: "stage_change",
+        notes: prevStageName
+          ? `Stage changed: ${prevStageName} → ${nextStageName}`
+          : `Stage set to ${nextStageName}`,
+        metaJson: { from: prevStageName, to: nextStageName, fromStageId: existing[0].leadStageId, toStageId: data.leadStageId },
+      });
+      await db
+        .update(prospects)
+        .set({ lastActivityAt: new Date(), updatedAt: new Date() })
+        .where(eq(prospects.id, id));
+    }
+
     await audit({
       userId: req.user!.id,
       entityType: "prospect",

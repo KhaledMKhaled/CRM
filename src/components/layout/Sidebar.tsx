@@ -15,6 +15,7 @@ import {
   PlugZap,
   Boxes,
   ClipboardList,
+  Target,
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { PERMISSIONS } from "@shared/permissions";
@@ -38,7 +39,8 @@ const NAV: NavItem[] = [
   { to: "/deals", label: "Deals", icon: Briefcase, perm: PERMISSIONS.DEALS_VIEW },
 
   { to: "/meta-ads", label: "Meta Ads", icon: Megaphone, perm: PERMISSIONS.META_ADS_VIEW, section: "Marketing" },
-  { to: "/campaigns", label: "Campaigns", icon: Boxes, perm: PERMISSIONS.CAMPAIGNS_VIEW },
+  { to: "/campaigns", label: "Campaigns & Ads", icon: Boxes, perm: PERMISSIONS.CAMPAIGNS_VIEW },
+  { to: "/attribution", label: "Attribution", icon: Target, perm: PERMISSIONS.SETTINGS_VIEW },
   { to: "/imports", label: "Import Wizard", icon: FileSpreadsheet, perm: PERMISSIONS.IMPORTS_CREATE },
 
   { to: "/reports", label: "Reports", icon: BarChart3, perm: [PERMISSIONS.REPORTS_ADMIN_VIEW, PERMISSIONS.REPORTS_SALES_VIEW, PERMISSIONS.REPORTS_MEDIA_VIEW], section: "Analytics" },

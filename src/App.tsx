@@ -17,6 +17,7 @@ import DealsPage from "@/pages/crm/DealsPage";
 import MetaAdsPage from "@/pages/meta/MetaAdsPage";
 import CampaignsPage from "@/pages/meta/CampaignsPage";
 import ImportWizardPage from "@/pages/meta/ImportWizardPage";
+import AttributionPage from "@/pages/admin/AttributionPage";
 import ReportsPage from "@/pages/reports/ReportsPage";
 import SettingsPage from "@/pages/settings/SettingsPage";
 import UsersPage from "@/pages/admin/UsersPage";
@@ -51,7 +52,10 @@ export default function App() {
 
             <Route path="/meta-ads" element={<ShellRoute perm={PERMISSIONS.META_ADS_VIEW}><MetaAdsPage /></ShellRoute>} />
             <Route path="/campaigns" element={<ShellRoute perm={PERMISSIONS.CAMPAIGNS_VIEW}><CampaignsPage /></ShellRoute>} />
+            <Route path="/adsets" element={<ShellRoute perm={PERMISSIONS.CAMPAIGNS_VIEW}><CampaignsPage /></ShellRoute>} />
+            <Route path="/ads" element={<ShellRoute perm={PERMISSIONS.CAMPAIGNS_VIEW}><CampaignsPage /></ShellRoute>} />
             <Route path="/imports" element={<ShellRoute perm={PERMISSIONS.IMPORTS_CREATE}><ImportWizardPage /></ShellRoute>} />
+            <Route path="/attribution" element={<ShellRoute perm={PERMISSIONS.SETTINGS_VIEW}><AttributionPage /></ShellRoute>} />
 
             <Route path="/reports" element={<ShellRoute perm={[PERMISSIONS.REPORTS_ADMIN_VIEW, PERMISSIONS.REPORTS_SALES_VIEW, PERMISSIONS.REPORTS_MEDIA_VIEW]}><ReportsPage /></ShellRoute>} />
 

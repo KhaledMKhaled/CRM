@@ -19,6 +19,8 @@ export default function ReportsPage() {
   const trend = useQuery({ queryKey: ["rep-trend", range], queryFn: () => api.get<any>(`/api/analytics/trend?from=${range.from}&to=${range.to}`) });
   const channels = useQuery({ queryKey: ["rep-ch", range], queryFn: () => api.get<any>(`/api/analytics/channels?from=${range.from}&to=${range.to}`) });
   const lb = useQuery({ queryKey: ["rep-lb", range], queryFn: () => api.get<any>(`/api/analytics/leaderboard?from=${range.from}&to=${range.to}`) });
+  const overview = useQuery({ queryKey: ["rep-overview", range], queryFn: () => api.get<any>(`/api/analytics/overview?from=${range.from}&to=${range.to}`) });
+  const stages = useQuery({ queryKey: ["rep-stages"], queryFn: () => api.get<any>(`/api/analytics/stages`) });
 
   return (
     <div>
@@ -29,6 +31,8 @@ export default function ReportsPage() {
           <TabsTrigger value="campaigns">Campaign ROAS</TabsTrigger>
           <TabsTrigger value="channels">Channels</TabsTrigger>
           <TabsTrigger value="trend">Trend</TabsTrigger>
+          <TabsTrigger value="funnel">Funnel</TabsTrigger>
+          <TabsTrigger value="stages">Stage distribution</TabsTrigger>
           <TabsTrigger value="reps">Sales reps</TabsTrigger>
         </TabsList>
 
@@ -137,6 +141,81 @@ export default function ReportsPage() {
                   height={360}
                 />
               )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="funnel">
+          <Card>
+            <CardHeader><CardTitle>Lifecycle funnel</CardTitle></CardHeader>
+            <CardContent>
+              {overview.data?.funnel && (
+                <div className="space-y-3">
+                  {(() => {
+                    const f = overview.data.funnel as Record<string, number>;
+                    const stages: { key: string; label: string }[] = [
+                      { key: "leads", label: "Leads" },
+                      { key: "mql", label: "MQL" },
+                      { key: "sql", label: "SQL" },
+                      { key: "opportunities", label: "Opportunity" },
+                      { key: "won", label: "Won" },
+                    ];
+                    const top = Math.max(1, ...stages.map((s) => f[s.key] ?? 0));
+                    return stages.map((s, i) => {
+                      const v = f[s.key] ?? 0;
+                      const w = Math.max(2, (v / top) * 100);
+                      const prev = i > 0 ? f[stages[i - 1].key] ?? 0 : null;
+                      const conv = prev ? (v / prev) * 100 : null;
+                      return (
+                        <div key={s.key}>
+                          <div className="flex items-center justify-between text-xs mb-1">
+                            <span className="font-medium">{s.label}</span>
+                            <span className="text-[var(--color-muted-fg)]">
+                              {formatNumber(v)} {conv != null && <span className="ml-2">→ {conv.toFixed(1)}% conv.</span>}
+                            </span>
+                          </div>
+                          <div className="h-7 bg-[var(--color-muted)] rounded">
+                            <div
+                              className="h-full rounded bg-[var(--color-primary)] transition-all"
+                              style={{ width: `${w}%` }}
+                            />
+                          </div>
+                        </div>
+                      );
+                    });
+                  })()}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="stages">
+          <Card>
+            <CardHeader><CardTitle>Current stage distribution</CardTitle></CardHeader>
+            <CardContent>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Stage</TableHead>
+                    <TableHead className="text-right">Prospects</TableHead>
+                    <TableHead className="text-right">Share</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {(() => {
+                    const rows: any[] = stages.data?.rows ?? [];
+                    const total = rows.reduce((s, r) => s + (r.count ?? 0), 0) || 1;
+                    return rows.map((r: any) => (
+                      <TableRow key={r.stageId ?? r.stageName}>
+                        <TableCell className="font-medium">{r.stageName ?? "—"}</TableCell>
+                        <TableCell className="text-right">{formatNumber(r.count)}</TableCell>
+                        <TableCell className="text-right">{formatPercent((r.count ?? 0) / total)}</TableCell>
+                      </TableRow>
+                    ));
+                  })()}
+                </TableBody>
+              </Table>
             </CardContent>
           </Card>
         </TabsContent>

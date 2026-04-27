@@ -259,6 +259,18 @@ export async function getFunnelCounts(range: DateRange) {
       )
     );
 
+  // Opportunities = prospects in the cohort that have at least one open or closed deal.
+  const oppAgg = await db
+    .select({ n: sql<string>`COUNT(DISTINCT ${prospects.id})` })
+    .from(prospects)
+    .innerJoin(deals, eq(deals.prospectId, prospects.id))
+    .where(
+      and(
+        gte(prospects.createdDate, new Date(range.from)),
+        lte(prospects.createdDate, new Date(range.to + "T23:59:59"))
+      )
+    );
+
   return {
     reach: parseInt(spendAgg[0]?.reach ?? "0"),
     impressions: parseInt(spendAgg[0]?.impressions ?? "0"),
@@ -267,6 +279,7 @@ export async function getFunnelCounts(range: DateRange) {
     leads: parseInt(leadsAgg[0]?.crmLeads ?? "0"),
     mql: parseInt(leadsAgg[0]?.mql ?? "0"),
     sql: parseInt(leadsAgg[0]?.sqlV ?? "0"),
+    opportunities: parseInt(oppAgg[0]?.n ?? "0"),
     won: parseInt(leadsAgg[0]?.won ?? "0"),
   };
 }
